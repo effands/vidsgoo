@@ -23,7 +23,7 @@
     return true;
   });
 
-  async function runDirectAutomation({ prompt, ratio, taskId }) {
+  async function runDirectAutomation({ prompt, ratio, taskId, folder }) {
     activeTaskId = taskId;
     cancelledTasks.delete(taskId);
     const findVisiblePromptBox = () => Array.from(
@@ -58,7 +58,7 @@
     await trustedClick(createButton, taskId, 'Rendering');
 
     const videoUrl = await awaitVideoResult(existingUrls);
-    const response = await chrome.runtime.sendMessage({ type: 'DOWNLOAD_VIDEO_FILE', videoUrl, taskId });
+    const response = await chrome.runtime.sendMessage({ type: 'DOWNLOAD_VIDEO_FILE', videoUrl, taskId, folder: folder || '' });
     if (!response?.success) throw new Error(response?.error || 'Background gagal mengunduh video.');
     return { videoUrl, downloadId: response.downloadId };
   }

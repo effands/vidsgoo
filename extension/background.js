@@ -93,7 +93,8 @@ async function executeTaskOnTab(task) {
       type: 'EXECUTE_VIDS_AUTOMATION',
       prompt: task.prompt,
       ratio: task.ratio,
-      taskId: task.id
+      taskId: task.id,
+      folder: task.folder || ''
     });
   } catch (err) {
     await reportFailure(task.id, `Gagal mengirim automasi ke tab Google Vids: ${err.message}`);
@@ -136,16 +137,18 @@ async function trustedClick(tabId, x, y) {
   }
 }
 
-async function downloadGeneratedVideo({ videoUrl, taskId }) {
+async function downloadGeneratedVideo({ videoUrl, taskId, folder }) {
   try {
     await postJson('/api/extension/task-progress', {
       taskId,
       stage: 'Downloading',
       extId: instanceId
     });
+    const safeFolder = String(folder || '').replace(/[<>:"/\\|?*\x00-\x1F]/g, '').trim();
+    const subFolder = safeFolder ? `Google_Vids/${safeFolder}` : 'Google_Vids';
     const downloadId = await chrome.downloads.download({
       url: videoUrl,
-      filename: `Google_Vids/video_${Date.now()}.mp4`,
+      filename: `${subFolder}/video_${Date.now()}.mp4`,
       conflictAction: 'uniquify',
       saveAs: false
     });
@@ -155,13 +158,14 @@ async function downloadGeneratedVideo({ videoUrl, taskId }) {
     validateCompletedDownload(downloadItem);
     const fileName = downloadItem.filename.split(/[\\/]/).pop();
     const sizeMB = (downloadItem.totalBytes / 1048576).toFixed(2);
+    const storedName = safeFolder ? `${safeFolder}/${fileName}` : fileName;
     await postJson('/api/extension/complete-task', {
       taskId,
       extId: instanceId,
       verified: true,
-      filename: fileName,
+      filename: storedName,
       sizeBytes: downloadItem.totalBytes,
-      details: `Download Chrome selesai | ID ${downloadId} | ${fileName} | ${sizeMB} MB`
+      details: `Download Chrome selesai | ID ${downloadId} | ${storedName} | ${sizeMB} MB`
     });
     busy = false;
     currentTaskId = null;

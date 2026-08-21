@@ -50,6 +50,36 @@ app.get('/api/delete-token', requireDashboardOrigin, (req, res) => {
   res.json({ token: deleteConfirmationToken });
 });
 
+function scanVideosRecursively(baseDir, relativePrefix = '') {
+  const currentDir = path.join(baseDir, relativePrefix);
+  if (!fs.existsSync(currentDir)) return [];
+  const results = [];
+  const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+  for (const entry of entries) {
+    const relPath = relativePrefix ? path.join(relativePrefix, entry.name) : entry.name;
+    const fullPath = path.join(baseDir, relPath);
+    if (entry.isDirectory()) {
+      results.push(...scanVideosRecursively(baseDir, relPath));
+    } else if (entry.isFile() && /\.(mp4|webm)$/i.test(entry.name)) {
+      const inspection = inspectVideoFile(fullPath);
+      if (inspection.valid) {
+        const category = relativePrefix ? relativePrefix.replace(/\\/g, '/') : 'Umum';
+        const normalizedRelPath = relPath.replace(/\\/g, '/');
+        results.push({
+          filename: entry.name,
+          relativePath: normalizedRelPath,
+          category,
+          fullPath,
+          sizeMB: (inspection.size / (1024 * 1024)).toFixed(2),
+          createdAt: inspection.stats.birthtime.toISOString(),
+          createdLabel: inspection.stats.birthtime.toLocaleString(),
+        });
+      }
+    }
+  }
+  return results;
+}
+
 // Endpoint Gallery Video
 app.get('/api/gallery', (req, res) => {
   const downloadDir = path.join(__dirname, 'downloads');
@@ -62,16 +92,16 @@ app.get('/api/gallery', (req, res) => {
   const videoFiles = [];
   for (const source of sources) {
     if (!fs.existsSync(source.dir)) continue;
-    for (const filename of fs.readdirSync(source.dir)) {
-      if (!/\.(mp4|webm)$/i.test(filename)) continue;
-      const inspection = inspectVideoFile(path.join(source.dir, filename));
-      if (!inspection.valid) continue;
+    const scanned = scanVideosRecursively(source.dir);
+    for (const item of scanned) {
       videoFiles.push({
-        filename,
-        url: `${source.route}/${encodeURIComponent(filename)}`,
-        sizeMB: (inspection.size / (1024 * 1024)).toFixed(2),
-        createdAt: inspection.stats.birthtime.toISOString(),
-        createdLabel: inspection.stats.birthtime.toLocaleString(),
+        filename: item.filename,
+        relativePath: item.relativePath,
+        category: item.category,
+        url: `${source.route}/${item.relativePath.split('/').map(encodeURIComponent).join('/')}`,
+        sizeMB: item.sizeMB,
+        createdAt: item.createdAt,
+        createdLabel: item.createdLabel,
         source: source.source,
         sourceLabel: source.sourceLabel
       });
@@ -83,36 +113,40 @@ app.get('/api/gallery', (req, res) => {
 
 const videoRoots = { server: path.join(__dirname, 'downloads'), chrome: chromeDownloadDir };
 
-app.delete('/api/gallery/:source/:filename', requireDashboardOrigin, requireDeleteToken, (req, res) => {
+const handleDeleteVideo = (req, res) => {
   try {
-    const target = resolveVideoTarget(videoRoots, req.params.source, req.params.filename);
+    const rawPath = req.params[0] || req.params.filename;
+    const target = resolveVideoTarget(videoRoots, req.params.source, rawPath);
     if (!fs.existsSync(target)) return res.status(404).json({ error: 'Video tidak ditemukan.' });
     const inspection = inspectVideoFile(target);
     if (!inspection.valid) return res.status(400).json({ error: 'File bukan video galeri yang valid.' });
     fs.unlinkSync(target);
-    addLog(`🗑️ Video dihapus | Sumber ${req.params.source} | File ${req.params.filename}`);
+    addLog(`🗑️ Video dihapus | Sumber ${req.params.source} | File ${rawPath}`);
     res.json({ success: true });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
-});
+};
+
+app.delete('/api/gallery/:source/:filename(*)', requireDashboardOrigin, requireDeleteToken, handleDeleteVideo);
 
 app.delete('/api/gallery', requireDashboardOrigin, requireDeleteToken, (req, res) => {
   let deleted = 0;
   const failures = [];
   for (const [source, dir] of Object.entries(videoRoots)) {
     if (!fs.existsSync(dir)) continue;
-    for (const filename of fs.readdirSync(dir).filter(name => /\.(mp4|webm)$/i.test(name))) {
+    const scanned = scanVideosRecursively(dir);
+    for (const item of scanned) {
       try {
-        const target = resolveVideoTarget(videoRoots, source, filename);
+        const target = resolveVideoTarget(videoRoots, source, item.relativePath);
         if (!inspectVideoFile(target).valid) {
-          failures.push({ source, filename, error: 'File bukan video galeri yang valid.' });
+          failures.push({ source, filename: item.relativePath, error: 'File bukan video galeri yang valid.' });
           continue;
         }
         fs.unlinkSync(target);
         deleted++;
       } catch (error) {
-        failures.push({ source, filename, error: error.message });
+        failures.push({ source, filename: item.relativePath, error: error.message });
       }
     }
   }
@@ -378,7 +412,7 @@ app.post('/api/queue/stop-reset', requireDashboardOrigin, (req, res) => {
 
 // Add Queue Task (Single or Batch Prompts)
 app.post('/api/queue/add', requireDashboardOrigin, (req, res) => {
-  const { prompts, url, ratio, targetChrome } = req.body;
+  const { prompts, url, ratio, targetChrome, folder } = req.body;
 
   if (!prompts || !prompts.trim()) {
     return res.status(400).json({ error: 'Prompt tidak boleh kosong' });
@@ -388,6 +422,7 @@ app.post('/api/queue/add', requireDashboardOrigin, (req, res) => {
   }
 
   const promptList = parsePromptBlocks(prompts);
+  const sanitizedFolder = String(folder || '').replace(/[<>:"/\\|?*\x00-\x1F]/g, '').trim();
   
   promptList.forEach((pText, index) => {
     taskQueue.push({
@@ -396,13 +431,15 @@ app.post('/api/queue/add', requireDashboardOrigin, (req, res) => {
       url: url || '',
       ratio: ratio || '16:9',
       targetChrome: targetChrome || 'auto',
+      folder: sanitizedFolder,
       status: 'Pending',
       createdAt: new Date().toLocaleTimeString(),
       createdTimestamp: Date.now()
     });
   });
 
-  addLog(`📥 Batch diterima | ${promptList.length} task | Rasio ${ratio || '16:9'} | Target ${targetChrome || 'auto'}`);
+  const folderLog = sanitizedFolder ? ` | Folder "${sanitizedFolder}"` : '';
+  addLog(`📥 Batch diterima | ${promptList.length} task | Rasio ${ratio || '16:9'} | Target ${targetChrome || 'auto'}${folderLog}`);
   
   processNextQueue();
 

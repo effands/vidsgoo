@@ -101,9 +101,6 @@
       --focus-ring: 0 0 0 3px rgba(2, 132, 199, 0.25);
     }
 
-    /* ==========================================================================
-       Reset & Base Styles
-       ========================================================================== */
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
@@ -127,9 +124,7 @@
       margin: 0 auto;
     }
 
-    /* ==========================================================================
-       Top Navigation Bar
-       ========================================================================== */
+    /* Top Navigation Bar */
     .top-bar {
       display: flex;
       justify-content: space-between;
@@ -215,9 +210,7 @@
       box-shadow: var(--focus-ring);
     }
 
-    /* ==========================================================================
-       Menu Tab Navigation Bar
-       ========================================================================== */
+    /* Menu Tab Navigation Bar */
     .menu-bar {
       display: flex;
       align-items: center;
@@ -290,9 +283,7 @@
       color: #ffffff;
     }
 
-    /* ==========================================================================
-       Tab Panes & Layouts
-       ========================================================================== */
+    /* Tab Panes */
     .tab-pane {
       display: none;
     }
@@ -307,9 +298,7 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* ==========================================================================
-       Card Components & Panels
-       ========================================================================== */
+    /* Card Components */
     .studio-card {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
@@ -343,7 +332,6 @@
       padding: 20px;
     }
 
-    /* Composer Layout */
     .composer-grid {
       display: grid;
       grid-template-columns: minmax(0, 1fr) 320px;
@@ -351,9 +339,6 @@
       align-items: start;
     }
 
-    /* ==========================================================================
-       Sidebar & Info Elements
-       ========================================================================== */
     .chrome-fleet-list {
       display: flex;
       flex-direction: column;
@@ -400,9 +385,6 @@
       line-height: 1.55;
     }
 
-    /* ==========================================================================
-       Form Controls & Inputs
-       ========================================================================== */
     .form-group {
       margin-bottom: 16px;
     }
@@ -436,7 +418,7 @@
 
     .batch-options-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.4fr);
       gap: 16px;
       margin-bottom: 16px;
     }
@@ -505,9 +487,6 @@
       font-weight: 700;
     }
 
-    /* ==========================================================================
-       Buttons & Actions
-       ========================================================================== */
     .btn {
       display: inline-flex;
       align-items: center;
@@ -593,9 +572,6 @@
       gap: 8px;
     }
 
-    /* ==========================================================================
-       Status Badges
-       ========================================================================== */
     .badge {
       display: inline-flex;
       align-items: center;
@@ -633,9 +609,15 @@
       color: var(--status-info-text);
     }
 
-    /* ==========================================================================
-       Queue Matrix Table
-       ========================================================================== */
+    .badge-folder {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      color: var(--text-primary);
+      text-transform: none;
+      font-weight: 600;
+      font-size: 0.75rem;
+    }
+
     .table-responsive {
       overflow-x: auto;
       width: 100%;
@@ -704,9 +686,50 @@
       font-size: 0.875rem;
     }
 
-    /* ==========================================================================
-       Video Gallery Grid
-       ========================================================================== */
+    .category-filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      background: var(--bg-inset);
+      border-bottom: 1px solid var(--border-subtle);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .category-filter-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .filter-chip-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .filter-chip-btn:hover {
+      border-color: var(--border-strong);
+      color: var(--text-primary);
+    }
+
+    .filter-chip-btn.active {
+      background: var(--accent-tint);
+      border-color: var(--status-info-border);
+      color: var(--accent-text);
+      font-weight: 700;
+    }
+
     .gallery-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -752,6 +775,7 @@
       align-items: center;
       font-size: 0.75rem;
       color: var(--text-secondary);
+      gap: 6px;
     }
 
     .gallery-actions {
@@ -761,9 +785,6 @@
       margin-top: 4px;
     }
 
-    /* ==========================================================================
-       Observability Live Feed (Logs)
-       ========================================================================== */
     .log-stream-box {
       background: var(--bg-inset);
       border: 1px solid var(--border-subtle);
@@ -850,9 +871,6 @@
       font-size: 0.875rem;
     }
 
-    /* ==========================================================================
-       Modal Confirmation Dialog
-       ========================================================================== */
     .dialog-backdrop {
       position: fixed;
       inset: 0;
@@ -925,9 +943,6 @@
       gap: 10px;
     }
 
-    /* ==========================================================================
-       Toast Notifications
-       ========================================================================== */
     .toast-container {
       position: fixed;
       bottom: 24px;
@@ -965,9 +980,6 @@
       to { transform: translateY(12px); opacity: 0; }
     }
 
-    /* ==========================================================================
-       Responsive Breakpoints
-       ========================================================================== */
     @media (max-width: 1024px) {
       .composer-grid {
         grid-template-columns: 1fr;
@@ -980,6 +992,9 @@
       }
       .prompt-syntax-guide {
         margin-top: 8px;
+      }
+      .batch-options-grid {
+        grid-template-columns: 1fr 1fr;
       }
     }
 
@@ -1087,6 +1102,10 @@
                 </select>
               </div>
               <div class="form-group">
+                <label for="folder">Folder / Kategori Sub-Folder (Opsional)</label>
+                <input type="text" id="folder" placeholder="Contoh: Edukasi, Iklan Produk, Project A">
+              </div>
+              <div class="form-group">
                 <label for="targetChrome">Pilih Eksekutor Chrome</label>
                 <select id="targetChrome">
                   <option value="auto">Auto Switch (Pilih Chrome Online Secara Otomatis)</option>
@@ -1115,7 +1134,7 @@
                 <span>Masukkan ke Antrean</span>
               </button>
               <span style="font-size: 0.8125rem; color: var(--text-secondary);">
-                Chrome online akan mengeksekusi prompt secara paralel otomatis.
+                File unduhan otomatis masuk ke dalam sub-folder yang ditentukan di <code>Downloads/Google_Vids/</code>.
               </span>
             </div>
           </form>
@@ -1140,10 +1159,10 @@
 
         <div class="studio-card">
           <div class="card-header">
-            <h2>Tips Pembuatan</h2>
+            <h2>Tips Kategori Sub-Folder</h2>
           </div>
           <div class="card-body" style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.6;">
-            <p>Gunakan deskripsi visual yang spesifik (suasana cahaya, pergerakan kamera, dan objek utama) untuk hasil generasi video optimal.</p>
+            <p>Memberi nama folder/kategori memudahkan pengorganisasian video di Galeri serta mengelompokkan file di komputer Anda secara otomatis.</p>
           </div>
         </div>
       </div>
@@ -1174,15 +1193,16 @@
               <tr>
                 <th style="width: 50px;">No</th>
                 <th>Prompt Video</th>
+                <th style="width: 140px;">Folder</th>
                 <th style="width: 100px;">Rasio</th>
                 <th style="width: 140px;">Status</th>
-                <th style="width: 180px;">Waktu Dibuat</th>
+                <th style="width: 170px;">Waktu Dibuat</th>
                 <th style="width: 170px; text-align: right;">Aksi</th>
               </tr>
             </thead>
             <tbody id="queueTable">
               <tr>
-                <td colspan="6" class="table-empty-row">Belum ada task dalam antrean.</td>
+                <td colspan="7" class="table-empty-row">Belum ada task dalam antrean.</td>
               </tr>
             </tbody>
           </table>
@@ -1191,7 +1211,7 @@
     </div>
   </section>
 
-  <!-- TAB 3: Video Gallery -->
+  <!-- TAB 3: Video Gallery with Category Filtering -->
   <section id="pane-gallery" class="tab-pane" role="tabpanel" aria-labelledby="tab-gallery">
     <div class="studio-card">
       <div class="card-header">
@@ -1205,6 +1225,14 @@
           </button>
         </div>
       </div>
+
+      <!-- Dynamic Category / Sub-Folder Filter Chips -->
+      <div id="categoryFilterBar" class="category-filter-bar">
+        <button class="filter-chip-btn active" data-category="ALL" type="button">
+          📁 Semua Folder (<span id="catCountAll">0</span>)
+        </button>
+      </div>
+
       <div class="card-body">
         <div id="galleryGrid" class="gallery-grid">
           <div style="color: var(--text-secondary); font-size: 0.84375rem; grid-column: 1 / -1; padding: 24px 0; text-align: center;">
@@ -1283,19 +1311,19 @@
 <!-- Application Logic -->
 <script>
   // Tab Switching Logic
-  const tabButtons = document.querySelectorAll('.nav-tab-btn');
-  const tabPanes = document.querySelectorAll('.tab-pane');
+  const getTabButtons = () => typeof document.querySelectorAll === 'function' ? Array.from(document.querySelectorAll('.nav-tab-btn')) : [];
+  const getTabPanes = () => typeof document.querySelectorAll === 'function' ? Array.from(document.querySelectorAll('.tab-pane')) : [];
 
   function switchTab(tabId) {
-    tabButtons.forEach(btn => {
+    getTabButtons().forEach(btn => {
       const isActive = btn.dataset.tab === tabId;
-      btn.classList.toggle('active', isActive);
-      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      btn.classList?.toggle?.('active', isActive);
+      btn.setAttribute?.('aria-selected', isActive ? 'true' : 'false');
     });
 
-    tabPanes.forEach(pane => {
+    getTabPanes().forEach(pane => {
       const isTarget = pane.id === `pane-${tabId}`;
-      pane.classList.toggle('active', isTarget);
+      pane.classList?.toggle?.('active', isTarget);
     });
 
     try {
@@ -1303,14 +1331,14 @@
     } catch (_) {}
   }
 
-  tabButtons.forEach(btn => {
+  getTabButtons().forEach(btn => {
     btn.addEventListener('click', () => {
       switchTab(btn.dataset.tab);
     });
   });
 
   // Restore active tab from URL hash if available
-  const initialHash = window.location.hash.replace('#', '');
+  const initialHash = typeof window !== 'undefined' && window.location?.hash ? window.location.hash.replace('#', '') : '';
   if (initialHash && ['composer', 'queue', 'gallery', 'logs', 'fleet'].includes(initialHash)) {
     switchTab(initialHash);
   }
@@ -1352,7 +1380,8 @@
   }
 
   function galleryVideoKey(video) {
-    return encodeURIComponent(`${String(video.source ?? '')}\u0000${String(video.filename ?? '')}`);
+    const rawPath = (video && (video.relativePath || video.filename)) ? (video.relativePath || video.filename) : '';
+    return encodeURIComponent(`${String(video?.source || '')}\u0000${String(rawPath)}`);
   }
 
   function showToast(message, icon = '✓') {
@@ -1402,6 +1431,8 @@
   }
 
   let currentQueueData = [];
+  let currentGalleryData = [];
+  let selectedCategory = 'ALL';
   let lastGallerySignature = null;
   let deleteTokenPromise = null;
 
@@ -1559,6 +1590,7 @@
     if (task) {
       document.getElementById('prompts').value = task.prompt;
       if (task.ratio) document.getElementById('ratio').value = task.ratio;
+      if (task.folder) document.getElementById('folder').value = task.folder;
       switchTab('composer');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       showToast('Prompt dimuat ke kolom input.', '↺');
@@ -1583,12 +1615,13 @@
 
       const tbody = document.getElementById('queueTable');
       if (count === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="table-empty-row">Belum ada task dalam antrean.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="table-empty-row">Belum ada task dalam antrean.</td></tr>';
       } else {
         tbody.innerHTML = data.queue.map((t, idx) => `
           <tr>
             <td><strong>${idx + 1}</strong></td>
-            <td style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(t.prompt)}">${escapeHtml(t.prompt)}</td>
+            <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(t.prompt)}">${escapeHtml(t.prompt)}</td>
+            <td><span class="badge badge-folder">📁 ${escapeHtml(t.folder || 'Umum')}</span></td>
             <td><span class="badge badge-info">${escapeHtml(t.ratio)}</span></td>
             <td class="status-${escapeHtml(String(t.status ?? '').split(' ')[0])}">${escapeHtml(t.status)}</td>
             <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-secondary);">${escapeHtml(t.createdAt)}</td>
@@ -1621,6 +1654,7 @@
     const payload = {
       url: document.getElementById('targetUrl').value,
       ratio: document.getElementById('ratio').value,
+      folder: document.getElementById('folder').value,
       targetChrome: document.getElementById('targetChrome').value,
       prompts: document.getElementById('prompts').value
     };
@@ -1660,6 +1694,90 @@
     fetchStatus();
   });
 
+  function renderCategoryFilterBar(videos) {
+    const filterBar = document.getElementById('categoryFilterBar');
+    if (!filterBar) return;
+    
+    const categoryCounts = new Map();
+    (videos || []).forEach(v => {
+      const cat = v.category || 'Umum';
+      categoryCounts.set(cat, (categoryCounts.get(cat) || 0) + 1);
+    });
+
+    let html = `
+      <button class="filter-chip-btn ${selectedCategory === 'ALL' ? 'active' : ''}" data-category="ALL" type="button">
+        📁 Semua Folder (${(videos || []).length})
+      </button>
+    `;
+
+    categoryCounts.forEach((count, cat) => {
+      html += `
+        <button class="filter-chip-btn ${selectedCategory === cat ? 'active' : ''}" data-category="${escapeHtml(cat)}" type="button">
+          📁 ${escapeHtml(cat)} (${count})
+        </button>
+      `;
+    });
+
+    filterBar.innerHTML = html;
+  }
+
+  const categoryFilterBar = document.getElementById('categoryFilterBar');
+  if (categoryFilterBar && typeof categoryFilterBar.addEventListener === 'function') {
+    categoryFilterBar.addEventListener('click', event => {
+      const button = event.target?.closest?.('.filter-chip-btn');
+      if (!button) return;
+      selectedCategory = button.dataset?.category || 'ALL';
+      
+      if (typeof document.querySelectorAll === 'function') {
+        document.querySelectorAll('.filter-chip-btn').forEach(btn => {
+          btn.classList?.toggle?.('active', btn.dataset?.category === selectedCategory);
+        });
+      }
+
+      renderGalleryGrid();
+    });
+  }
+
+  function renderGalleryGrid() {
+    const galleryGrid = document.getElementById('galleryGrid');
+    if (!galleryGrid) return;
+
+    const filtered = selectedCategory === 'ALL'
+      ? currentGalleryData
+      : currentGalleryData.filter(v => (v.category || 'Umum') === selectedCategory);
+
+    if (!filtered || filtered.length === 0) {
+      galleryGrid.innerHTML = `
+        <div style="color: var(--text-secondary); font-size: 0.84375rem; grid-column: 1 / -1; padding: 32px 0; text-align: center;">
+          ${currentGalleryData.length === 0 ? 'Belum ada video downloaded.' : `Tidak ada video di dalam folder "${escapeHtml(selectedCategory)}".`}
+        </div>
+      `;
+      return;
+    }
+
+    galleryGrid.innerHTML = filtered.map(v => {
+      const targetPath = (v && (v.relativePath || v.filename)) ? (v.relativePath || v.filename) : '';
+      return `
+        <div class="gallery-card">
+          <video data-video-key="${galleryVideoKey(v)}" controls preload="metadata" playsinline src="${escapeHtml(v.url)}"></video>
+          <div class="gallery-filename" title="${escapeHtml(v.filename)}">${escapeHtml(v.filename)}</div>
+          <div class="gallery-meta">
+            <span class="badge badge-folder">📁 ${escapeHtml(v.category || 'Umum')}</span>
+            <span>💾 ${escapeHtml(v.sizeMB)} MB · ${escapeHtml(v.sourceLabel)}</span>
+          </div>
+          <div class="gallery-actions">
+            <a href="${escapeHtml(v.url)}" download="${escapeHtml(v.filename)}" class="btn btn-sm btn-primary" style="text-align: center;">
+              Download
+            </a>
+            <button class="btn btn-sm btn-danger-outline delete-video-btn" data-source="${escapeHtml(v.source)}" data-filename="${encodeURIComponent(String(targetPath))}" type="button">
+              Hapus
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
   async function fetchGallery() {
     try {
       const res = await fetch('/api/gallery');
@@ -1667,9 +1785,13 @@
       const galleryGrid = document.getElementById('galleryGrid');
       const navGalleryBadge = document.getElementById('navGalleryBadge');
       
+      currentGalleryData = videos || [];
+
       if (navGalleryBadge) {
-        navGalleryBadge.textContent = videos ? videos.length : 0;
+        navGalleryBadge.textContent = currentGalleryData.length;
       }
+
+      renderCategoryFilterBar(currentGalleryData);
 
       const signature = JSON.stringify(videos);
       if (signature === lastGallerySignature) return;
@@ -1680,29 +1802,7 @@
       ]));
       lastGallerySignature = signature;
 
-      if (!videos || videos.length === 0) {
-        galleryGrid.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.84375rem; grid-column: 1 / -1; padding: 24px 0; text-align: center;">Belum ada video downloaded. Video yang selesai didownload akan muncul di sini.</div>';
-        return;
-      }
-
-      galleryGrid.innerHTML = videos.map(v => `
-        <div class="gallery-card">
-          <video data-video-key="${galleryVideoKey(v)}" controls preload="metadata" playsinline src="${escapeHtml(v.url)}"></video>
-          <div class="gallery-filename" title="${escapeHtml(v.filename)}">${escapeHtml(v.filename)}</div>
-          <div class="gallery-meta">
-            <span>💾 ${escapeHtml(v.sizeMB)} MB · ${escapeHtml(v.sourceLabel)}</span>
-            <span>${escapeHtml(v.createdLabel)}</span>
-          </div>
-          <div class="gallery-actions">
-            <a href="${escapeHtml(v.url)}" download="${escapeHtml(v.filename)}" class="btn btn-sm btn-primary" style="text-align: center;">
-              Download
-            </a>
-            <button class="btn btn-sm btn-danger-outline delete-video-btn" data-source="${escapeHtml(v.source)}" data-filename="${encodeURIComponent(String(v.filename ?? ''))}" type="button">
-              Hapus
-            </button>
-          </div>
-        </div>
-      `).join('');
+      renderGalleryGrid();
 
       for (const video of galleryGrid.querySelectorAll('video[data-video-key]')) {
         const previous = playbackState.get(video.dataset.videoKey);
