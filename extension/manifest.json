@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Google Vids AI Generator & Downloader",
+  "name": "VIDS GOO · AI Video Automation Helper",
   "version": "2.5",
-  "description": "Ekstensi Chrome untuk otomatisasi generate video Google Vids, atur ratio, dan download video.",
+  "description": "Ekstensi Chrome VIDS GOO untuk otomatisasi generate video Google Vids, atur ratio, dan download video.",
   "permissions": [
     "activeTab",
     "scripting",

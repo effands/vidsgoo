@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none">
+  <defs>
+    <linearGradient id="vgBg" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0284C7"/>
+      <stop offset="0.6" stop-color="#0369A1"/>
+      <stop offset="1" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="vgAccent" x1="12" y1="12" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#BAE6FD"/>
+    </linearGradient>
+    <filter id="vgGlow" x="0" y="0" width="48" height="48" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background Tile -->
+  <rect width="48" height="48" rx="12" fill="url(#vgBg)"/>
+  <rect x="0.75" y="0.75" width="46.5" height="46.5" rx="11.25" stroke="#38BDF8" stroke-opacity="0.35" stroke-width="1.5"/>
+
+  <!-- Stylized Geometric V Mark -->
+  <path d="M12 14L24 33L36 14H30L24 23.8L18 14H12Z" fill="url(#vgAccent)"/>
+
+  <!-- Play / Signal Accent Dot -->
+  <circle cx="34" cy="31" r="4" fill="#38BDF8" filter="url(#vgGlow)"/>
+  <circle cx="34" cy="31" r="2" fill="#FFFFFF"/>
+</svg>

@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Google Vids Studio Multi-Chrome Console</title>
+  <title>VIDS GOO · Studio Otomatisasi Multi-Chrome</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -143,25 +144,34 @@
       gap: 14px;
     }
 
-    .brand-mark {
+    .brand-logo-wrap {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 38px;
-      height: 38px;
-      background: var(--accent-primary);
-      color: #ffffff;
-      border-radius: 8px;
-      font-size: 1.2rem;
-      font-weight: 700;
       flex-shrink: 0;
     }
 
     .brand-title {
-      font-size: 1.125rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
       color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .brand-badge-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 0.6875rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--accent-tint);
+      border: 1px solid var(--status-info-border);
+      color: var(--accent-text);
+      vertical-align: middle;
     }
 
     .brand-meta {
@@ -170,7 +180,7 @@
       gap: 8px;
       font-size: 0.75rem;
       color: var(--text-secondary);
-      margin-top: 1px;
+      margin-top: 2px;
     }
 
     .top-controls {
@@ -1057,9 +1067,31 @@
   <!-- Header Top Bar -->
   <header class="top-bar">
     <div class="brand-group">
-      <div class="brand-mark" aria-hidden="true">🎬</div>
+      <div class="brand-logo-wrap" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40" fill="none">
+          <defs>
+            <linearGradient id="headerVgBg" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#0284C7"/>
+              <stop offset="0.6" stop-color="#0369A1"/>
+              <stop offset="1" stop-color="#0F172A"/>
+            </linearGradient>
+            <linearGradient id="headerVgAccent" x1="10" y1="10" x2="30" y2="30" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#FFFFFF"/>
+              <stop offset="1" stop-color="#BAE6FD"/>
+            </linearGradient>
+          </defs>
+          <rect width="40" height="40" rx="10" fill="url(#headerVgBg)"/>
+          <rect x="0.75" y="0.75" width="38.5" height="38.5" rx="9.25" stroke="#38BDF8" stroke-opacity="0.35" stroke-width="1.5"/>
+          <path d="M10 12L20 28L30 12H25L20 20L15 12H10Z" fill="url(#headerVgAccent)"/>
+          <circle cx="28" cy="26" r="3.5" fill="#38BDF8"/>
+          <circle cx="28" cy="26" r="1.5" fill="#FFFFFF"/>
+        </svg>
+      </div>
       <div>
-        <h1 class="brand-title">Google Vids Studio Multi-Chrome</h1>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h1 class="brand-title">VIDS GOO</h1>
+          <span class="brand-badge-pill">STUDIO</span>
+        </div>
         <div class="brand-meta">
           <span>Console Otomatisasi Video</span>
           <span>·</span>
