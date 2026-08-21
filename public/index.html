@@ -3,341 +3,843 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Google Vids Multi-Chrome Studio</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>Google Vids Studio Multi-Chrome Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
+    /* ==========================================================================
+       Design System Tokens (Crafted Studio & Observability Console)
+       ========================================================================== */
     :root[data-theme="dark"] {
-      --bg-gradient: radial-gradient(circle at 15% 15%, #1e1b4b 0%, #0f172a 45%, #020617 100%);
-      --nebula-color1: rgba(168, 85, 247, 0.18);
-      --nebula-color2: rgba(56, 189, 248, 0.15);
-      --glass-bg: rgba(15, 23, 42, 0.65);
-      --glass-border: rgba(255, 255, 255, 0.12);
-      --text: #f8fafc;
-      --muted: #94a3b8;
-      --accent: #38bdf8;
-      --accent-glow: rgba(56, 189, 248, 0.4);
-      --card-inner: rgba(30, 41, 59, 0.5);
-      --input-bg: rgba(15, 23, 42, 0.8);
-      --log-bg: #0b0f19;
-      --log-text: #34d399;
-      --success: #4ade80;
-      --warning: #fbbf24;
-      --danger: #f87171;
+      --bg-base: #0b0f17;
+      --bg-surface: #131b26;
+      --bg-surface-hover: #192332;
+      --bg-inset: #0e1520;
+      --bg-subtle: #172231;
+      --border-subtle: #202c3d;
+      --border-strong: #2e3e56;
+      --border-focus: #38bdf8;
+      
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-tertiary: #64748b;
+      
+      --accent-primary: #0284c7;
+      --accent-hover: #0369a1;
+      --accent-active: #0c4a6e;
+      --accent-tint: rgba(14, 165, 233, 0.12);
+      --accent-text: #38bdf8;
+      
+      --status-success-bg: rgba(16, 185, 129, 0.12);
+      --status-success-border: rgba(16, 185, 129, 0.28);
+      --status-success-text: #34d399;
+      
+      --status-warning-bg: rgba(245, 158, 11, 0.12);
+      --status-warning-border: rgba(245, 158, 11, 0.28);
+      --status-warning-text: #fbbf24;
+      
+      --status-danger-bg: rgba(239, 68, 68, 0.12);
+      --status-danger-border: rgba(239, 68, 68, 0.28);
+      --status-danger-text: #f87171;
+      --status-danger-solid: #dc2626;
+      --status-danger-hover: #b91c1c;
+      
+      --status-info-bg: rgba(14, 165, 233, 0.12);
+      --status-info-border: rgba(14, 165, 233, 0.28);
+      --status-info-text: #38bdf8;
+      
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.32);
+      --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
+      
+      --focus-ring: 0 0 0 3px rgba(56, 189, 248, 0.35);
     }
 
     :root[data-theme="light"] {
-      --bg-gradient: radial-gradient(circle at 15% 15%, #e0f2fe 0%, #f1f5f9 45%, #e2e8f0 100%);
-      --nebula-color1: rgba(192, 132, 252, 0.25);
-      --nebula-color2: rgba(56, 189, 248, 0.25);
-      --glass-bg: rgba(255, 255, 255, 0.7);
-      --glass-border: rgba(255, 255, 255, 0.6);
-      --text: #0f172a;
-      --muted: #64748b;
-      --accent: #0284c7;
-      --accent-glow: rgba(2, 132, 199, 0.25);
-      --card-inner: rgba(241, 245, 249, 0.8);
-      --input-bg: rgba(255, 255, 255, 0.9);
-      --log-bg: #f1f5f9;
-      --log-text: #047857;
-      --success: #16a34a;
-      --warning: #d97706;
-      --danger: #dc2626;
+      --bg-base: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-hover: #f1f5f9;
+      --bg-inset: #f1f5f9;
+      --bg-subtle: #e2e8f0;
+      --border-subtle: #cbd5e1;
+      --border-strong: #94a3b8;
+      --border-focus: #0284c7;
+      
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-tertiary: #64748b;
+      
+      --accent-primary: #0284c7;
+      --accent-hover: #0369a1;
+      --accent-active: #075985;
+      --accent-tint: rgba(2, 132, 199, 0.1);
+      --accent-text: #0284c7;
+      
+      --status-success-bg: rgba(16, 185, 129, 0.12);
+      --status-success-border: rgba(16, 185, 129, 0.35);
+      --status-success-text: #047857;
+      
+      --status-warning-bg: rgba(245, 158, 11, 0.12);
+      --status-warning-border: rgba(245, 158, 11, 0.35);
+      --status-warning-text: #b45309;
+      
+      --status-danger-bg: rgba(239, 68, 68, 0.1);
+      --status-danger-border: rgba(239, 68, 68, 0.35);
+      --status-danger-text: #b91c1c;
+      --status-danger-solid: #dc2626;
+      --status-danger-hover: #b91c1c;
+      
+      --status-info-bg: rgba(2, 132, 199, 0.1);
+      --status-info-border: rgba(2, 132, 199, 0.3);
+      --status-info-text: #0369a1;
+      
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+      --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+      --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12);
+      
+      --focus-ring: 0 0 0 3px rgba(2, 132, 199, 0.25);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s, border-color 0.3s, color 0.3s; }
-    
+    /* ==========================================================================
+       Reset & Base Styles
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
-      background: var(--bg-gradient);
-      color: var(--text);
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      font-size: 0.9375rem;
+      line-height: 1.5;
       min-height: 100vh;
       padding: 24px;
-      position: relative;
-      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
-    /* Animated Cosmic Nebula Backdrop */
-    body::before {
-      content: "";
-      position: fixed;
-      top: -20%;
-      left: -10%;
-      width: 600px;
-      height: 600px;
-      background: var(--nebula-color1);
-      filter: blur(120px);
-      border-radius: 50%;
-      z-index: -1;
-      animation: nebulaPulse 12s infinite alternate ease-in-out;
-    }
-
-    body::after {
-      content: "";
-      position: fixed;
-      bottom: -20%;
-      right: -10%;
-      width: 700px;
-      height: 700px;
-      background: var(--nebula-color2);
-      filter: blur(140px);
-      border-radius: 50%;
-      z-index: -1;
-      animation: nebulaPulse 15s infinite alternate-reverse ease-in-out;
-    }
-
-    @keyframes nebulaPulse {
-      0% { transform: scale(1) translate(0, 0); }
-      100% { transform: scale(1.25) translate(40px, -30px); }
-    }
-
+    /* ==========================================================================
+       Top Navigation Bar
+       ========================================================================== */
     .top-bar {
-      max-width: 1400px;
+      max-width: 1440px;
       margin: 0 auto 24px auto;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 16px 24px;
-      background: var(--glass-bg);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--glass-border);
-      border-radius: 16px;
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+      padding: 14px 20px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
     }
 
-    .brand {
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-mark {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: var(--accent-primary);
+      color: #ffffff;
+      border-radius: 8px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .brand-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 1px;
+    }
+
+    .top-controls {
       display: flex;
       align-items: center;
       gap: 12px;
     }
 
-    .brand-icon {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, #38bdf8, #818cf8);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-      box-shadow: 0 0 16px var(--accent-glow);
-    }
-
-    .brand h1 {
-      font-size: 1.25rem;
-      font-weight: 800;
-      background: linear-gradient(90deg, var(--text), var(--accent));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .theme-toggle {
-      background: var(--card-inner);
-      border: 1px solid var(--glass-border);
-      color: var(--text);
-      padding: 8px 16px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 0.85rem;
-      display: flex;
+    .theme-toggle-btn {
+      display: inline-flex;
       align-items: center;
       gap: 8px;
-      backdrop-filter: blur(8px);
+      padding: 8px 14px;
+      background: var(--bg-inset);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
     }
 
-    .theme-toggle:hover {
-      border-color: var(--accent);
-      box-shadow: 0 0 12px var(--accent-glow);
+    .theme-toggle-btn:hover {
+      background: var(--bg-surface-hover);
+      border-color: var(--border-strong);
     }
 
-    .layout {
-      display: grid;
-      grid-template-columns: 350px 1fr;
-      gap: 24px;
-      max-width: 1400px;
+    .theme-toggle-btn:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    /* ==========================================================================
+       Layout Grid
+       ========================================================================== */
+    .app-layout {
+      max-width: 1440px;
       margin: 0 auto;
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
     }
 
-    .glass-card {
-      background: var(--glass-bg);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--glass-border);
-      border-radius: 20px;
-      padding: 24px;
-      margin-bottom: 24px;
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
+    /* ==========================================================================
+       Card Components & Panels
+       ========================================================================== */
+    .studio-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 20px;
+      overflow: hidden;
     }
 
-    .glass-card h2 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 18px;
-      color: var(--text);
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-subtle);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 12px;
+      background: var(--bg-surface);
     }
 
-    .form-group { margin-bottom: 16px; }
-    label { display: block; font-size: 0.825rem; font-weight: 700; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-    
-    input, textarea, select {
-      width: 100%;
-      padding: 12px 14px;
-      background: var(--input-bg);
-      border: 1px solid var(--glass-border);
-      border-radius: 10px;
-      color: var(--text);
-      font-size: 0.9rem;
-      backdrop-filter: blur(4px);
-    }
-
-    textarea { min-height: 120px; resize: vertical; }
-    input:focus, textarea:focus, select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 12px var(--accent-glow); }
-
-    .btn {
-      width: 100%;
-      padding: 14px;
-      background: linear-gradient(135deg, #38bdf8, #0284c7);
-      color: #fff;
-      border: none;
-      border-radius: 12px;
+    .card-header h2 {
+      font-size: 1rem;
       font-weight: 700;
-      font-size: 0.95rem;
-      cursor: pointer;
-      box-shadow: 0 4px 20px var(--accent-glow);
-      transition: transform 0.2s, box-shadow 0.2s;
+      letter-spacing: -0.015em;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px var(--accent-glow);
+    .card-body {
+      padding: 20px;
     }
 
-    .batch-card { padding: 0; overflow: hidden; }
-    .batch-head {
-      display: flex; justify-content: space-between; gap: 24px; align-items: flex-start;
-      padding: 24px 26px 18px; border-bottom: 1px solid var(--glass-border);
+    /* ==========================================================================
+       Sidebar Elements (Agent Fleet)
+       ========================================================================== */
+    .chrome-fleet-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
-    .batch-head h2 { margin: 0 0 6px; font-size: 1.2rem; letter-spacing: -0.025em; }
-    .batch-head p { color: var(--muted); font-size: .82rem; line-height: 1.55; max-width: 58ch; }
-    .batch-step {
-      flex: 0 0 auto; padding: 6px 9px; border: 1px solid var(--glass-border);
-      border-radius: 7px; color: var(--accent); font-size: .72rem; font-weight: 800;
-      letter-spacing: .08em; text-transform: uppercase; background: var(--card-inner);
-    }
-    .batch-body { padding: 20px 26px 26px; }
-    .batch-options { display: grid; grid-template-columns: minmax(0, .72fr) minmax(0, 1.28fr); gap: 14px; }
-    .batch-options .form-group { margin-bottom: 14px; }
-    .prompt-shell {
-      display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 12px;
-      padding: 8px; background: var(--input-bg); border: 1px solid var(--glass-border);
-      border-radius: 14px; transition: border-color .2s, box-shadow .2s;
-    }
-    .prompt-shell:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-    .prompt-shell textarea {
-      min-height: 190px; padding: 14px; border: 0; border-radius: 9px; background: transparent;
-      box-shadow: none; line-height: 1.65;
-    }
-    .prompt-shell textarea:focus { box-shadow: none; }
-    .prompt-guide {
-      padding: 14px; border-radius: 9px; background: var(--card-inner); color: var(--muted);
-      font-size: .76rem; line-height: 1.55;
-    }
-    .prompt-guide strong { display: block; color: var(--text); font-size: .83rem; margin-bottom: 8px; }
-    .prompt-guide kbd {
-      display: inline-block; padding: 2px 6px; margin: 2px; border: 1px solid var(--glass-border);
-      border-bottom-width: 2px; border-radius: 5px; color: var(--text); background: var(--input-bg);
-      font: 700 .7rem 'Plus Jakarta Sans', sans-serif;
-    }
-    .batch-submit { margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .batch-footnote { margin-top: 9px; text-align: center; color: var(--muted); font-size: .72rem; }
 
-    .btn-sm { padding: 6px 14px; font-size: 0.8rem; border-radius: 8px; width: auto; }
-
-    .chrome-list { display: flex; flex-direction: column; gap: 12px; }
     .chrome-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 16px;
-      background: var(--card-inner);
-      border-radius: 12px;
-      border: 1px solid var(--glass-border);
+      padding: 12px 14px;
+      background: var(--bg-inset);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      transition: border-color 0.15s ease;
     }
 
-    .badge { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
-    .badge-online { background: rgba(74, 222, 128, 0.15); color: var(--success); border: 1px solid rgba(74, 222, 128, 0.3); }
-    .badge-offline { background: rgba(248, 113, 113, 0.15); color: var(--danger); border: 1px solid rgba(248, 113, 113, 0.3); }
+    .chrome-item:hover {
+      border-color: var(--border-strong);
+    }
 
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.875rem; }
-    th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--glass-border); }
-    th { color: var(--muted); font-weight: 700; background: var(--card-inner); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }
+    .chrome-item-info strong {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
 
-    .status-Pending { color: var(--warning); font-weight: 600; }
-    .status-Processing { color: var(--accent); font-weight: 700; animation: pulseText 1.5s infinite alternate; }
-    .status-Completed { color: var(--success); font-weight: 600; }
-    .status-Failed { color: var(--danger); font-weight: 600; }
+    .chrome-item-port {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
 
-    @keyframes pulseText { 0% { opacity: 0.6; } 100% { opacity: 1; } }
+    .sidebar-note {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
 
-    .log-box {
-      background: var(--input-bg);
-      border: 1px solid var(--glass-border);
-      border-radius: 14px;
+    .sidebar-note p + p {
+      margin-top: 8px;
+    }
+
+    .info-callout {
+      padding: 12px 14px;
+      background: var(--accent-tint);
+      border: 1px solid var(--status-info-border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 0.8125rem;
+      line-height: 1.5;
+    }
+
+    /* ==========================================================================
+       Form Controls & Inputs
+       ========================================================================== */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    input[type="text"], select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg-inset);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.875rem;
+      line-height: 1.5;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    input[type="text"]:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      box-shadow: var(--focus-ring);
+    }
+
+    .batch-options-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .prompt-composer-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 240px;
+      gap: 12px;
       padding: 8px;
-      color: var(--text);
+      background: var(--bg-inset);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .prompt-composer-shell:focus-within {
+      border-color: var(--border-focus);
+      box-shadow: var(--focus-ring);
+    }
+
+    .prompt-composer-shell textarea {
+      min-height: 160px;
+      padding: 10px 12px;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    .prompt-composer-shell textarea:focus {
+      border: none;
+      box-shadow: none;
+    }
+
+    .prompt-syntax-guide {
+      padding: 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-size: 0.775rem;
+      line-height: 1.55;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .prompt-syntax-guide strong {
+      display: block;
+      color: var(--text-primary);
+      font-size: 0.8125rem;
+      margin-bottom: 6px;
+    }
+
+    kbd {
+      display: inline-block;
+      padding: 2px 6px;
+      margin: 1px 2px;
+      background: var(--bg-inset);
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.725rem;
+      font-weight: 700;
+    }
+
+    /* ==========================================================================
+       Buttons & Actions
+       ========================================================================== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+      user-select: none;
+      min-height: 40px;
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    .btn-primary {
+      background: var(--accent-primary);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: var(--bg-inset);
+      border-color: var(--border-subtle);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-surface-hover);
+      border-color: var(--border-strong);
+    }
+
+    .btn-danger {
+      background: var(--status-danger-solid);
+      color: #ffffff;
+    }
+
+    .btn-danger:hover {
+      background: var(--status-danger-hover);
+    }
+
+    .btn-danger-outline {
+      background: var(--status-danger-bg);
+      border-color: var(--status-danger-border);
+      color: var(--status-danger-text);
+    }
+
+    .btn-danger-outline:hover {
+      background: var(--status-danger-solid);
+      border-color: var(--status-danger-solid);
+      color: #ffffff;
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 0.8125rem;
+      border-radius: 6px;
+      min-height: 32px;
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    .action-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ==========================================================================
+       Status Badges
+       ========================================================================== */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .badge-online, .badge-success {
+      background: var(--status-success-bg);
+      border: 1px solid var(--status-success-border);
+      color: var(--status-success-text);
+    }
+
+    .badge-offline, .badge-danger {
+      background: var(--status-danger-bg);
+      border: 1px solid var(--status-danger-border);
+      color: var(--status-danger-text);
+    }
+
+    .badge-warning {
+      background: var(--status-warning-bg);
+      border: 1px solid var(--status-warning-border);
+      color: var(--status-warning-text);
+    }
+
+    .badge-info {
+      background: var(--status-info-bg);
+      border: 1px solid var(--status-info-border);
+      color: var(--status-info-text);
+    }
+
+    /* ==========================================================================
+       Queue Matrix Table
+       ========================================================================== */
+    .table-responsive {
+      overflow-x: auto;
+      width: 100%;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84375rem;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    th {
+      background: var(--bg-inset);
+      color: var(--text-secondary);
+      font-weight: 700;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background: var(--bg-surface-hover);
+    }
+
+    .status-Pending {
+      color: var(--status-warning-text);
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .status-Processing {
+      color: var(--accent-text);
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .status-Completed {
+      color: var(--status-success-text);
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .status-Failed {
+      color: var(--status-danger-text);
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .table-empty-row {
+      text-align: center;
+      color: var(--text-secondary);
+      padding: 32px 14px;
+      font-size: 0.875rem;
+    }
+
+    /* ==========================================================================
+       Video Gallery Grid
+       ========================================================================== */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .gallery-card {
+      background: var(--bg-inset);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.15s ease;
+    }
+
+    .gallery-card:hover {
+      border-color: var(--border-strong);
+    }
+
+    .gallery-card video {
+      width: 100%;
+      height: 170px;
+      object-fit: contain;
+      background: #000000;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .gallery-filename {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .gallery-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .gallery-actions {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    /* ==========================================================================
+       Observability Live Feed (Logs)
+       ========================================================================== */
+    .log-stream-box {
+      background: var(--bg-inset);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
       height: 280px;
       overflow-y: auto;
-    }
-    .log-entry {
-      display: grid; grid-template-columns: 82px 96px minmax(0, 1fr); gap: 10px;
-      align-items: start; padding: 10px 12px; border-radius: 9px;
-      border-bottom: 1px solid var(--glass-border); font-size: .78rem; line-height: 1.5;
-    }
-    .log-entry:last-child { border-bottom: 0; }
-    .log-entry:hover { background: var(--card-inner); }
-    .log-time { color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
-    .log-status {
-      display: inline-flex; justify-content: center; padding: 3px 7px; border-radius: 6px;
-      font-size: .65rem; font-weight: 800; letter-spacing: .045em; text-transform: uppercase;
-      color: var(--muted); background: var(--card-inner); white-space: nowrap;
-    }
-    .log-status.info { color: var(--accent); background: rgba(56, 189, 248, .12); }
-    .log-status.success { color: var(--success); background: rgba(74, 222, 128, .12); }
-    .log-status.warning { color: var(--warning); background: rgba(251, 191, 36, .12); }
-    .log-status.danger { color: var(--danger); background: rgba(248, 113, 113, .12); }
-    .log-message { color: var(--text); overflow-wrap: anywhere; }
-    .log-empty { display: grid; place-items: center; height: 100%; color: var(--muted); font-size: .82rem; }
-    @media (max-width: 640px) {
-      .log-entry { grid-template-columns: 70px 1fr; }
-      .log-message { grid-column: 1 / -1; }
+      font-family: 'JetBrains Mono', monospace;
     }
 
-    /* Fully Responsive Media Queries */
-    @media (max-width: 1024px) {
-      .layout {
-        grid-template-columns: 1fr;
-        gap: 16px;
-      }
-      body {
-        padding: 16px;
-      }
-      .top-bar {
-        padding: 14px 18px;
-      }
-      .prompt-shell { grid-template-columns: 1fr; }
-      .prompt-guide { display: none; }
+    .log-row {
+      display: grid;
+      grid-template-columns: 88px 108px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.775rem;
+      line-height: 1.5;
     }
 
-    @media (max-width: 640px) {
-      .batch-head { padding: 20px; }
-      .batch-body { padding: 16px 20px 22px; }
-      .batch-options { grid-template-columns: 1fr; gap: 0; }
+    .log-row:last-child {
+      border-bottom: none;
     }
 
-    /* Toast Notification System */
+    .log-row:hover {
+      background: var(--bg-surface-hover);
+    }
+
+    .log-time {
+      color: var(--text-tertiary);
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .log-tag {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .log-tag.info {
+      background: var(--status-info-bg);
+      border: 1px solid var(--status-info-border);
+      color: var(--status-info-text);
+    }
+
+    .log-tag.success {
+      background: var(--status-success-bg);
+      border: 1px solid var(--status-success-border);
+      color: var(--status-success-text);
+    }
+
+    .log-tag.warning {
+      background: var(--status-warning-bg);
+      border: 1px solid var(--status-warning-border);
+      color: var(--status-warning-text);
+    }
+
+    .log-tag.danger {
+      background: var(--status-danger-bg);
+      border: 1px solid var(--status-danger-border);
+      color: var(--status-danger-text);
+    }
+
+    .log-message {
+      color: var(--text-primary);
+      overflow-wrap: anywhere;
+    }
+
+    .log-empty-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-secondary);
+      font-size: 0.8125rem;
+    }
+
+    /* ==========================================================================
+       Modal Confirmation Dialog
+       ========================================================================== */
+    .dialog-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(5, 8, 13, 0.75);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.15s ease, visibility 0.15s ease;
+    }
+
+    .dialog-backdrop.is-open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .dialog-panel {
+      width: min(440px, 100%);
+      padding: 24px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(12px) scale(0.98);
+      transition: transform 0.15s ease;
+    }
+
+    .dialog-backdrop.is-open .dialog-panel {
+      transform: none;
+    }
+
+    .dialog-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .dialog-icon-badge {
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--status-danger-bg);
+      border: 1px solid var(--status-danger-border);
+      color: var(--status-danger-text);
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .dialog-panel h3 {
+      font-size: 1.0625rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .dialog-panel p {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .dialog-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* ==========================================================================
+       Toast Notifications
+       ========================================================================== */
     .toast-container {
       position: fixed;
       bottom: 24px;
@@ -350,200 +852,287 @@
     }
 
     .toast {
-      background: var(--glass-bg);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--glass-border);
-      color: var(--text);
-      padding: 14px 20px;
-      border-radius: 14px;
-      font-size: 0.9rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      color: var(--text-primary);
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 0.875rem;
       font-weight: 600;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      box-shadow: var(--shadow-md);
       display: flex;
       align-items: center;
       gap: 10px;
-      animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1), toastOut 0.3s ease forwards 2.7s;
       pointer-events: auto;
+      animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1), toastOut 0.25s ease forwards 2.75s;
     }
-
-    .dialog-backdrop {
-      position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center;
-      padding: 20px; background: rgba(2, 6, 23, .68); backdrop-filter: blur(8px);
-      opacity: 0; visibility: hidden; transition: opacity .18s ease, visibility .18s ease;
-    }
-    .dialog-backdrop.is-open { opacity: 1; visibility: visible; }
-    .dialog-panel {
-      width: min(430px, 100%); padding: 24px; border: 1px solid var(--glass-border);
-      border-radius: 18px; background: var(--glass-bg); color: var(--text);
-      box-shadow: 0 28px 80px rgba(2, 6, 23, .42); transform: translateY(10px) scale(.98);
-      transition: transform .2s ease;
-    }
-    .dialog-backdrop.is-open .dialog-panel { transform: none; }
-    .dialog-icon {
-      width: 44px; height: 44px; display: grid; place-items: center; margin-bottom: 16px;
-      border-radius: 12px; color: var(--danger); background: rgba(248, 113, 113, .12); font-size: 1.25rem;
-    }
-    .dialog-panel h3 { font-size: 1.08rem; letter-spacing: -.02em; margin-bottom: 8px; }
-    .dialog-panel p { color: var(--muted); font-size: .86rem; line-height: 1.6; overflow-wrap: anywhere; }
-    .dialog-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 22px; }
-    .dialog-button {
-      padding: 11px 14px; border-radius: 10px; border: 1px solid var(--glass-border);
-      background: var(--card-inner); color: var(--text); font-weight: 700; cursor: pointer;
-    }
-    .dialog-button:hover { border-color: var(--accent); }
-    .dialog-button.danger { border-color: transparent; background: #dc2626; color: white; }
-    .dialog-button:focus-visible { outline: 3px solid var(--accent-glow); outline-offset: 2px; }
 
     @keyframes toastIn {
-      from { transform: translateY(100%) scale(0.9); opacity: 0; }
-      to { transform: translateY(0) scale(1); opacity: 1; }
+      from { transform: translateY(12px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
 
     @keyframes toastOut {
-      from { transform: translateY(0) scale(1); opacity: 1; }
-      to { transform: translateY(20px) scale(0.95); opacity: 0; }
+      from { transform: translateY(0); opacity: 1; }
+      to { transform: translateY(12px); opacity: 0; }
+    }
+
+    /* ==========================================================================
+       Responsive Breakpoints
+       ========================================================================== */
+    @media (max-width: 1024px) {
+      .app-layout {
+        grid-template-columns: 1fr;
+      }
+      body {
+        padding: 16px;
+      }
+      .prompt-composer-shell {
+        grid-template-columns: 1fr;
+      }
+      .prompt-syntax-guide {
+        margin-top: 8px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .top-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .top-controls {
+        width: 100%;
+        justify-content: flex-end;
+      }
+      .batch-options-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .log-row {
+        grid-template-columns: 76px 1fr;
+      }
+      .log-message {
+        grid-column: 1 / -1;
+      }
+      .dialog-actions {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
 
 <!-- Header Navigation Bar -->
-<div class="top-bar">
-  <div class="brand">
-    <div class="brand-icon">🎬</div>
-    <h1>Google Vids Multi-Chrome Studio</h1>
+<header class="top-bar">
+  <div class="brand-group">
+    <div class="brand-mark" aria-hidden="true">🎬</div>
+    <div>
+      <h1 class="brand-title">Google Vids Studio Multi-Chrome</h1>
+      <div class="brand-meta">
+        <span>Console Otomatisasi Video</span>
+        <span>·</span>
+        <span id="systemStatusTag" class="status-Completed">System Ready</span>
+      </div>
+    </div>
   </div>
-  <button id="themeToggle" class="theme-toggle">
-    <span id="themeIcon">🌙</span> <span id="themeText">Tema Gelap</span>
-  </button>
-</div>
+  <div class="top-controls">
+    <button id="themeToggle" class="theme-toggle-btn" type="button" aria-label="Ganti Tema">
+      <span id="themeIcon" aria-hidden="true">🌙</span>
+      <span id="themeText">Tema Gelap</span>
+    </button>
+  </div>
+</header>
 
-<div class="layout">
-  <!-- Left Control Panel -->
-  <div class="sidebar">
-    <div class="glass-card">
-      <h2 style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-        <span>🧩 Chrome Add-ons Agents</span>
+<!-- Main Application Layout -->
+<main class="app-layout">
+  
+  <!-- Left Column: Agent Fleet Management -->
+  <aside class="sidebar">
+    <section class="studio-card">
+      <div class="card-header">
+        <h2>Chrome Extension Fleet</h2>
         <span id="chromeOnlineBadge" class="badge badge-offline">0 Online</span>
-      </h2>
-      <div id="chromeList" class="chrome-list">
-        <div style="color: var(--muted); font-size: 0.85rem;">Menunggu Chrome Extension terhubung...</div>
       </div>
-    </div>
-
-    <div class="glass-card">
-      <h2>💡 Auto-Connect Chrome</h2>
-      <p style="font-size: 0.825rem; color: var(--muted); line-height: 1.6;">
-        Setiap browser Chrome yang terpasang <strong>Google Vids AI Helper Add-ons</strong> akan <strong>otomatis terhubung</strong> & muncul secara otomatis di daftar atas!
-      </p>
-    </div>
-  </div>
-
-  <!-- Right Main Panel -->
-  <div class="main">
-    <div class="glass-card batch-card">
-      <div class="batch-head">
-        <div>
-          <h2>Batch video baru</h2>
-          <p>Atur tujuan, tulis adegan, lalu biarkan Chrome yang tersedia mengerjakan antreannya.</p>
+      <div class="card-body">
+        <div id="chromeList" class="chrome-fleet-list">
+          <div style="color: var(--text-secondary); font-size: 0.8125rem;">Menunggu Chrome Extension terhubung...</div>
         </div>
-        <span class="batch-step">Buat antrean</span>
       </div>
-      <div class="batch-body">
-      <form id="queueForm">
-        <div class="form-group" style="display: none;">
-          <label>URL Google Vids Target (Opsional)</label>
-          <input type="text" id="targetUrl" placeholder="Kosongkan untuk Auto Detect Tab Google Vids di masing-masing Chrome">
-        </div>
+    </section>
 
-        <div class="batch-options">
+    <section class="studio-card">
+      <div class="card-header">
+        <h2>Petunjuk Koneksi Otomatis</h2>
+      </div>
+      <div class="card-body sidebar-note">
+        <p>Setiap browser Chrome yang telah terpasang <strong>Google Vids AI Helper Extension</strong> akan langsung terdeteksi pada daftar di atas.</p>
+        <div class="info-callout" style="margin-top: 12px;">
+          Buka tab Google Vids di masing-masing jendela Chrome agar eksekutor siap menerima antrean video.
+        </div>
+      </div>
+    </section>
+  </aside>
+
+  <!-- Right Column: Task Dispatch, Queue & Observability -->
+  <section class="main-content">
+    
+    <!-- Batch Task Composer -->
+    <div class="studio-card">
+      <div class="card-header">
+        <h2>
+          <span>Batch Video Baru</span>
+        </h2>
+        <span class="badge badge-info">Task Composer</span>
+      </div>
+      <div class="card-body">
+        <form id="queueForm">
+          <div class="form-group" style="display: none;">
+            <label for="targetUrl">URL Google Vids Target (Opsional)</label>
+            <input type="text" id="targetUrl" placeholder="Kosongkan untuk deteksi otomatis tab Google Vids pada Chrome">
+          </div>
+
+          <div class="batch-options-grid">
+            <div class="form-group">
+              <label for="ratio">Rasio Aspek Video</label>
+              <select id="ratio">
+                <option value="16:9">16:9 (Lanskap)</option>
+                <option value="9:16">9:16 (Potret)</option>
+                <option value="1:1">1:1 (Persegi)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="targetChrome">Pilih Eksekutor Chrome</label>
+              <select id="targetChrome">
+                <option value="auto">Auto Switch (Pilih Chrome Online Secara Otomatis)</option>
+              </select>
+            </div>
+          </div>
+
           <div class="form-group">
-            <label>Rasio Video (Aspect Ratio)</label>
-            <select id="ratio">
-              <option value="16:9">16:9 (Lanskap)</option>
-              <option value="9:16">9:16 (Potret)</option>
-              <option value="1:1">1:1 (Persegi)</option>
-            </select>
+            <label for="prompts">Prompt Video (Batch)</label>
+            <div class="prompt-composer-shell">
+              <textarea id="prompts" placeholder="Embun pagi menyelimuti sungai, kamera bergerak perlahan mengikuti arus.&#10;&#10;Perahu kayu melintas saat matahari terbit, suasana tenang dan sinematik." required></textarea>
+              <aside class="prompt-syntax-guide">
+                <div>
+                  <strong>Aturan 1 Blok = 1 Video</strong>
+                  Tulis prompt beberapa baris. Untuk memisahkan antar video, sisakan satu baris kosong dengan menekan:
+                </div>
+                <div style="margin-top: 8px;">
+                  <kbd>Enter</kbd> + <kbd>Enter</kbd>
+                </div>
+              </aside>
+            </div>
           </div>
-          <div class="form-group">
-            <label>Pilih Chrome Eksekutor</label>
-            <select id="targetChrome">
-              <option value="auto">🔄 Auto Switch (Pilih Chrome Online Secara Otomatis)</option>
-            </select>
-          </div>
-        </div>
 
-        <div class="form-group">
-          <label for="prompts">Prompt video</label>
-          <div class="prompt-shell">
-            <textarea id="prompts" placeholder="Embun pagi menyelimuti sungai, kamera bergerak perlahan mengikuti arus.&#10;&#10;Perahu kayu melintas saat matahari terbit, suasana tenang dan sinematik." required></textarea>
-            <aside class="prompt-guide">
-              <strong>Satu blok = satu video</strong>
-              Tulis prompt sepanjang beberapa baris. Untuk membuat video berikutnya, sisakan satu baris kosong:
-              <div style="margin-top:10px;"><kbd>Enter</kbd> + <kbd>Enter</kbd></div>
-            </aside>
+          <div style="margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <button type="submit" class="btn btn-primary" style="min-width: 200px;">
+              <span>Masukkan ke Antrean</span>
+            </button>
+            <span style="font-size: 0.775rem; color: var(--text-secondary);">
+              Chrome online akan dieksekusi bergantian secara paralel otomatis.
+            </span>
           </div>
-        </div>
-
-        <button type="submit" class="btn batch-submit"><span>Masukkan ke antrean</span><span aria-hidden="true">→</span></button>
-        <div class="batch-footnote">Chrome online dipilih otomatis bila eksekutor disetel ke Auto Switch.</div>
-      </form>
+        </form>
       </div>
     </div>
 
     <!-- Queue Status Table -->
-    <div class="glass-card">
-      <h2 style="display: flex; justify-content: space-between; align-items: center;">
-        <span>📋 Status Antrean Task (<strong id="queueCount" style="color: var(--accent);">0</strong>)</span>
-        <div style="display:flex;gap:8px;">
-          <button id="stopResetBtn" class="btn btn-sm" style="background:#b91c1c;">⏹ Stop &amp; Reset</button>
-          <button id="clearQueueBtn" class="btn btn-sm" style="background:var(--card-inner);border:1px solid var(--glass-border);color:var(--text);">🗑️ Bersihkan</button>
+    <div class="studio-card">
+      <div class="card-header">
+        <h2>
+          <span>Status Antrean Task</span>
+          <span class="badge badge-info" id="queueBadge">0 Task</span>
+        </h2>
+        <div class="action-group">
+          <button id="stopResetBtn" class="btn btn-sm btn-danger" type="button" title="Batalkan seluruh task dan reset eksekusi">
+            Stop &amp; Reset
+          </button>
+          <button id="clearQueueBtn" class="btn btn-sm btn-secondary" type="button" title="Bersihkan antrean yang tersisa">
+            Bersihkan Antrean
+          </button>
         </div>
-      </h2>
-      <div style="overflow-x: auto; width: 100%;">
-        <table>
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>Prompt</th>
-              <th>Ratio</th>
-              <th>Status</th>
-              <th>Waktu</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="queueTable">
-            <tr><td colspan="6" style="text-align: center; color: var(--muted);">Belum ada antrean task</td></tr>
-          </tbody>
-        </table>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        <div class="table-responsive" style="border: none; border-radius: 0;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 50px;">No</th>
+                <th>Prompt Video</th>
+                <th style="width: 90px;">Rasio</th>
+                <th style="width: 130px;">Status</th>
+                <th style="width: 160px;">Waktu Dibuat</th>
+                <th style="width: 150px; text-align: right;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="queueTable">
+              <tr>
+                <td colspan="6" class="table-empty-row">Belum ada task dalam antrean.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- Video Gallery Card -->
-    <div class="glass-card">
-      <h2 style="display: flex; justify-content: space-between; align-items: center;">
-        <span>🎬 Galeri Hasil Video Downloaded</span>
-        <div style="display:flex; gap:8px;">
-          <button id="refreshGalleryBtn" class="btn btn-sm">🔄 Refresh</button>
-          <button id="clearGalleryBtn" class="btn btn-sm" style="background:linear-gradient(135deg,#ef4444,#dc2626);">🗑️ Hapus Semua</button>
+    <!-- Video Gallery Grid -->
+    <div class="studio-card">
+      <div class="card-header">
+        <h2>Galeri Video Downloaded</h2>
+        <div class="action-group">
+          <button id="refreshGalleryBtn" class="btn btn-sm btn-secondary" type="button">
+            Refresh
+          </button>
+          <button id="clearGalleryBtn" class="btn btn-sm btn-danger-outline" type="button">
+            Hapus Semua Video
+          </button>
         </div>
-      </h2>
-      <div id="galleryGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 14px;">
-        <div style="color: var(--muted); font-size: 0.85rem;">Belum ada video downloaded. Hasil video yang selesai didownload akan muncul di sini.</div>
+      </div>
+      <div class="card-body">
+        <div id="galleryGrid" class="gallery-grid">
+          <div style="color: var(--text-secondary); font-size: 0.8125rem; grid-column: 1 / -1; padding: 12px 0;">
+            Belum ada video downloaded. Video yang selesai didownload akan muncul di sini.
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Live Logs -->
-    <div class="glass-card">
-      <h2><span>Aktivitas otomatisasi</span><span class="batch-step">Live</span></h2>
-      <div id="logBox" class="log-box">
-        <div class="log-empty">Menunggu aktivitas baru…</div>
+    <!-- Live Automation Activity Feed (Logs) -->
+    <div class="studio-card">
+      <div class="card-header">
+        <h2>Aktivitas Otomatisasi (Live Stream)</h2>
+        <span class="badge badge-online">Live Feed</span>
       </div>
+      <div class="card-body" style="padding: 12px;">
+        <div id="logBox" class="log-stream-box">
+          <div class="log-empty-state">Menunggu aktivitas baru...</div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<!-- Confirmation Modal Dialog -->
+<div id="confirmDialog" class="dialog-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
+  <div class="dialog-panel">
+    <div class="dialog-header">
+      <div class="dialog-icon-badge" aria-hidden="true">⚠️</div>
+      <h3 id="confirmTitle">Konfirmasi Tindakan</h3>
+    </div>
+    <p id="confirmMessage"></p>
+    <div class="dialog-actions">
+      <button id="confirmCancel" class="btn btn-secondary" type="button">Batal</button>
+      <button id="confirmAccept" class="btn btn-danger" type="button">Ya, Lanjutkan</button>
     </div>
   </div>
 </div>
 
+<!-- Toast Notifications Container -->
+<div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+<!-- Application Logic -->
 <script>
   // Theme Switching Logic (Dark / Light Mode)
   const themeToggle = document.getElementById('themeToggle');
@@ -572,73 +1161,20 @@
     }
   }
 
-  async function fetchChromes() {
-    const res = await fetch('/api/chromes');
-    const instances = await res.json();
-    
-    const chromeListDiv = document.getElementById('chromeList');
-    const targetChromeSelect = document.getElementById('targetChrome');
-    const chromeOnlineBadge = document.getElementById('chromeOnlineBadge');
-    
-    chromeListDiv.innerHTML = '';
-    targetChromeSelect.innerHTML = '<option value="auto">🔄 Auto Switch (Pilih Chrome Online Secara Otomatis)</option>';
-
-    let onlineCount = 0;
-
-    if (instances.length === 0) {
-      chromeListDiv.innerHTML = '<div style="color: var(--muted); font-size: 0.85rem; padding: 8px 0;">Menunggu Chrome Extension terhubung...</div>';
-    } else {
-      instances.forEach(c => {
-        const isOnline = c.status === 'Online';
-        if (isOnline) onlineCount++;
-
-        const item = document.createElement('div');
-        item.className = 'chrome-item';
-        item.innerHTML = `
-          <div>
-            <strong>${escapeHtml(c.name)}</strong><br>
-            <span style="color: var(--muted); font-size: 0.75rem;">Type: ${escapeHtml(c.port)}</span>
-          </div>
-          <span class="badge ${isOnline ? 'badge-online' : 'badge-offline'}">${escapeHtml(c.status)}</span>
-        `;
-        chromeListDiv.appendChild(item);
-
-        if (isOnline) {
-          const opt = document.createElement('option');
-          opt.value = c.id || c.port;
-          opt.textContent = `🎯 Standby: ${c.name}`;
-          targetChromeSelect.appendChild(opt);
-        }
-      });
-    }
-
-    if (chromeOnlineBadge) {
-      chromeOnlineBadge.textContent = `${onlineCount} Chrome Online`;
-      if (onlineCount > 0) {
-        chromeOnlineBadge.className = 'badge badge-online';
-      } else {
-        chromeOnlineBadge.className = 'badge badge-offline';
-      }
-    }
+  function escapeHtml(str) {
+    return String(str ?? '')
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
-</script>
 
-<!-- Toast Container -->
-<div id="toastContainer" class="toast-container"></div>
-<div id="confirmDialog" class="dialog-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
-  <div class="dialog-panel">
-    <div class="dialog-icon" aria-hidden="true">🗑</div>
-    <h3 id="confirmTitle">Konfirmasi tindakan</h3>
-    <p id="confirmMessage"></p>
-    <div class="dialog-actions">
-      <button id="confirmCancel" class="dialog-button" type="button">Batal</button>
-      <button id="confirmAccept" class="dialog-button danger" type="button">Ya, lanjutkan</button>
-    </div>
-  </div>
-</div>
+  function galleryVideoKey(video) {
+    return encodeURIComponent(`${String(video.source ?? '')}\u0000${String(video.filename ?? '')}`);
+  }
 
-<script>
-  function showToast(message, icon = '✨') {
+  function showToast(message, icon = '✓') {
     const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');
     toast.className = 'toast';
@@ -654,7 +1190,7 @@
     }, 3000);
   }
 
-  function showConfirm(message, title = 'Konfirmasi tindakan') {
+  function showConfirm(message, title = 'Konfirmasi Tindakan') {
     const dialog = document.getElementById('confirmDialog');
     const titleNode = document.getElementById('confirmTitle');
     const messageNode = document.getElementById('confirmMessage');
@@ -688,21 +1224,63 @@
   let lastGallerySignature = null;
   let deleteTokenPromise = null;
 
-  function escapeHtml(str) {
-    return String(str ?? '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-  }
+  async function fetchChromes() {
+    try {
+      const res = await fetch('/api/chromes');
+      const instances = await res.json();
+      
+      const chromeListDiv = document.getElementById('chromeList');
+      const targetChromeSelect = document.getElementById('targetChrome');
+      const chromeOnlineBadge = document.getElementById('chromeOnlineBadge');
+      
+      chromeListDiv.innerHTML = '';
+      targetChromeSelect.innerHTML = '<option value="auto">Auto Switch (Pilih Chrome Online Secara Otomatis)</option>';
 
-  function galleryVideoKey(video) {
-    return encodeURIComponent(`${String(video.source ?? '')}\u0000${String(video.filename ?? '')}`);
+      let onlineCount = 0;
+
+      if (!instances || instances.length === 0) {
+        chromeListDiv.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.8125rem; padding: 6px 0;">Menunggu Chrome Extension terhubung...</div>';
+      } else {
+        instances.forEach(c => {
+          const isOnline = c.status === 'Online';
+          if (isOnline) onlineCount++;
+
+          const item = document.createElement('div');
+          item.className = 'chrome-item';
+          item.innerHTML = `
+            <div class="chrome-item-info">
+              <strong>${escapeHtml(c.name)}</strong>
+              <span class="chrome-item-port">Port: ${escapeHtml(c.port)}</span>
+            </div>
+            <span class="badge ${isOnline ? 'badge-online' : 'badge-offline'}">${escapeHtml(c.status)}</span>
+          `;
+          chromeListDiv.appendChild(item);
+
+          if (isOnline) {
+            const opt = document.createElement('option');
+            opt.value = c.id || c.port;
+            opt.textContent = `Standby: ${c.name}`;
+            targetChromeSelect.appendChild(opt);
+          }
+        });
+      }
+
+      if (chromeOnlineBadge) {
+        chromeOnlineBadge.textContent = `${onlineCount} Online`;
+        chromeOnlineBadge.className = onlineCount > 0 ? 'badge badge-online' : 'badge badge-offline';
+      }
+    } catch (err) {
+      console.error('Gagal mengambil status Chrome:', err);
+    }
   }
 
   function renderLogs(logs) {
     const logBox = document.getElementById('logBox');
     logBox.textContent = '';
-    if (!logs.length) {
+    if (!logs || !logs.length) {
       const empty = document.createElement('div');
-      empty.className = 'log-empty';
-      empty.textContent = 'Menunggu aktivitas baru…';
+      empty.className = 'log-empty-state';
+      empty.textContent = 'Menunggu aktivitas baru...';
       logBox.appendChild(empty);
       return;
     }
@@ -713,17 +1291,22 @@
       const statusMatch = withoutTime.match(/(?:^|\s)(ASSIGNED|SUBMITTING|RENDERING|DOWNLOADING|COMPLETED|FAILED|RETRY)(?:\s|\||$)/i);
       const status = statusMatch ? statusMatch[1].toUpperCase() : /menunggu|antrean/i.test(withoutTime) ? 'MENUNGGU' : 'INFO';
       const tone = status === 'COMPLETED' ? 'success' : status === 'FAILED' ? 'danger' : /RETRY|MENUNGGU/.test(status) ? 'warning' : 'info';
+      
       const entry = document.createElement('div');
-      entry.className = 'log-entry';
+      entry.className = 'log-row';
+      
       const time = document.createElement('time');
       time.className = 'log-time';
-      time.textContent = timeMatch?.[1] || '—';
+      time.textContent = timeMatch?.[1] || ':';
+      
       const badge = document.createElement('span');
-      badge.className = `log-status ${tone}`;
+      badge.className = `log-tag ${tone}`;
       badge.textContent = status;
+      
       const message = document.createElement('div');
       message.className = 'log-message';
       message.textContent = withoutTime.replace(/^[^A-Za-z0-9À-ÿ]+/, '').replace(new RegExp(`^${status}\\s*\\|?\\s*`, 'i'), '');
+      
       entry.appendChild(time);
       entry.appendChild(badge);
       entry.appendChild(message);
@@ -769,39 +1352,46 @@
       document.getElementById('prompts').value = task.prompt;
       if (task.ratio) document.getElementById('ratio').value = task.ratio;
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      showToast('Prompt dimuat ke kolom input!', '🔄');
+      showToast('Prompt dimuat ke kolom input.', '↺');
     }
   };
 
   async function fetchStatus() {
-    const res = await fetch('/api/status');
-    const data = await res.json();
+    try {
+      const res = await fetch('/api/status');
+      const data = await res.json();
 
-    currentQueueData = data.queue || [];
-    document.getElementById('queueCount').textContent = data.queue.length;
+      currentQueueData = data.queue || [];
+      const queueBadge = document.getElementById('queueBadge');
+      if (queueBadge) {
+        queueBadge.textContent = `${data.queue.length} Task`;
+      }
 
-    const tbody = document.getElementById('queueTable');
-    if (data.queue.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--muted);">Belum ada antrean task</td></tr>';
-    } else {
-      tbody.innerHTML = data.queue.map((t, idx) => `
-        <tr>
-          <td>${idx + 1}</td>
-          <td style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(t.prompt)}">${escapeHtml(t.prompt)}</td>
-          <td>${escapeHtml(t.ratio)}</td>
-          <td class="status-${escapeHtml(String(t.status ?? '').split(' ')[0])}">${escapeHtml(t.status)}</td>
-          <td>${escapeHtml(t.createdAt)}</td>
-          <td>
-            <div style="display: flex; gap: 6px;">
-              <button data-task-action="copy" data-task-id="${encodeURIComponent(String(t.id ?? ''))}" class="btn btn-sm" style="background: var(--card-inner); border: 1px solid var(--glass-border); color: var(--text); padding: 4px 8px;" title="Salin Prompt ke Clipboard">📋 Salin</button>
-              <button data-task-action="reuse" data-task-id="${encodeURIComponent(String(t.id ?? ''))}" class="btn btn-sm" style="padding: 4px 8px;" title="Isi ke Kolom Input & Gunakan Lagi">🔄 Gunakan Lagi</button>
-            </div>
-          </td>
-        </tr>
-      `).join('');
+      const tbody = document.getElementById('queueTable');
+      if (data.queue.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="table-empty-row">Belum ada task dalam antrean.</td></tr>';
+      } else {
+        tbody.innerHTML = data.queue.map((t, idx) => `
+          <tr>
+            <td><strong>${idx + 1}</strong></td>
+            <td style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(t.prompt)}">${escapeHtml(t.prompt)}</td>
+            <td><span class="badge badge-info">${escapeHtml(t.ratio)}</span></td>
+            <td class="status-${escapeHtml(String(t.status ?? '').split(' ')[0])}">${escapeHtml(t.status)}</td>
+            <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-secondary);">${escapeHtml(t.createdAt)}</td>
+            <td style="text-align: right;">
+              <div class="action-group" style="justify-content: flex-end;">
+                <button data-task-action="copy" data-task-id="${encodeURIComponent(String(t.id ?? ''))}" class="btn btn-sm btn-secondary" type="button" title="Salin Prompt">Salin</button>
+                <button data-task-action="reuse" data-task-id="${encodeURIComponent(String(t.id ?? ''))}" class="btn btn-sm btn-primary" type="button" title="Gunakan Lagi">Pakai Lagi</button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      renderLogs(data.logs || []);
+    } catch (err) {
+      console.error('Gagal mengambil status antrean:', err);
     }
-
-    renderLogs(data.logs || []);
   }
 
   document.getElementById('queueTable').addEventListener('click', event => {
@@ -811,23 +1401,6 @@
     if (button.dataset.taskAction === 'copy') window.copyPrompt(taskId);
     if (button.dataset.taskAction === 'reuse') window.reusePrompt(taskId);
   });
-
-  const addPortBtn = document.getElementById('addPortBtn');
-  if (addPortBtn) {
-    addPortBtn.addEventListener('click', async () => {
-      const portInput = document.getElementById('newPort');
-      const port = portInput?.value;
-      if (!port) return showToast('Masukkan nomor port.', '⚠️');
-
-      await fetch('/api/chromes/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: `Chrome Port ${port}`, port })
-      });
-      portInput.value = '';
-      fetchChromes();
-    });
-  }
 
   document.getElementById('queueForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -847,12 +1420,13 @@
     const data = await res.json();
     if (data.success) {
       document.getElementById('prompts').value = '';
+      showToast('Batch task berhasil dimasukkan ke antrean!', '✓');
       fetchStatus();
     }
   });
 
   document.getElementById('clearQueueBtn').addEventListener('click', async () => {
-    if (await showConfirm('Semua task dalam antrean akan dihapus.', 'Kosongkan antrean?')) {
+    if (await showConfirm('Semua task dalam antrean akan dihapus secara permanen.', 'Kosongkan antrean?')) {
       await fetch('/api/queue/clear', { method: 'DELETE' });
       fetchStatus();
       showToast('Antrean sudah dikosongkan.', '✓');
@@ -867,7 +1441,7 @@
     });
     const data = await res.json();
     if (!res.ok) return showToast(data.error || 'Gagal menghentikan proses.', '⚠️');
-    showToast(`${data.cancelled} task dibatalkan.`, '⏹');
+    showToast(`${data.cancelled} task berhasil dibatalkan.`, '⏹');
     fetchStatus();
   });
 
@@ -878,28 +1452,33 @@
       const galleryGrid = document.getElementById('galleryGrid');
       const signature = JSON.stringify(videos);
       if (signature === lastGallerySignature) return;
+      
       const playbackState = new Map(Array.from(galleryGrid.querySelectorAll('video[data-video-key]')).map(video => [
         video.dataset.videoKey,
         { currentTime: video.currentTime, wasPlaying: !video.paused }
       ]));
       lastGallerySignature = signature;
 
-      if (videos.length === 0) {
-        galleryGrid.innerHTML = '<div style="color: var(--muted); font-size: 0.85rem; grid-column: 1/-1;">Belum ada video downloaded. Hasil video yang selesai didownload akan muncul di sini.</div>';
+      if (!videos || videos.length === 0) {
+        galleryGrid.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.8125rem; grid-column: 1 / -1; padding: 12px 0;">Belum ada video downloaded. Hasil video yang selesai didownload akan muncul di sini.</div>';
         return;
       }
 
       galleryGrid.innerHTML = videos.map(v => `
-        <div style="background: var(--card-inner); border: 1px solid var(--glass-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
-          <video data-video-key="${galleryVideoKey(v)}" controls preload="metadata" playsinline style="width: 100%; border-radius: 8px; max-height: 180px; background: #000;" src="${escapeHtml(v.url)}"></video>
-          <div style="font-size: 0.8rem; font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${escapeHtml(v.filename)}</div>
-          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted);">
+        <div class="gallery-card">
+          <video data-video-key="${galleryVideoKey(v)}" controls preload="metadata" playsinline src="${escapeHtml(v.url)}"></video>
+          <div class="gallery-filename" title="${escapeHtml(v.filename)}">${escapeHtml(v.filename)}</div>
+          <div class="gallery-meta">
             <span>💾 ${escapeHtml(v.sizeMB)} MB · ${escapeHtml(v.sourceLabel)}</span>
-            <span>🕒 ${escapeHtml(v.createdLabel)}</span>
+            <span>${escapeHtml(v.createdLabel)}</span>
           </div>
-          <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:4px;">
-            <a href="${escapeHtml(v.url)}" download="${escapeHtml(v.filename)}" class="btn btn-sm" style="text-align:center;text-decoration:none;display:block;">📥 Download</a>
-            <button class="btn btn-sm delete-video-btn" data-source="${escapeHtml(v.source)}" data-filename="${encodeURIComponent(String(v.filename ?? ''))}" style="background:linear-gradient(135deg,#ef4444,#dc2626);">🗑️ Hapus</button>
+          <div class="gallery-actions">
+            <a href="${escapeHtml(v.url)}" download="${escapeHtml(v.filename)}" class="btn btn-sm btn-primary" style="text-align: center;">
+              Download
+            </a>
+            <button class="btn btn-sm btn-danger-outline delete-video-btn" data-source="${escapeHtml(v.source)}" data-filename="${encodeURIComponent(String(v.filename ?? ''))}" type="button">
+              Hapus
+            </button>
           </div>
         </div>
       `).join('');
@@ -920,7 +1499,7 @@
         }
       }
     } catch (err) {
-      console.error(err);
+      console.error('Gagal mengambil galeri:', err);
     }
   }
 
@@ -930,7 +1509,7 @@
     const button = event.target.closest('.delete-video-btn');
     if (!button) return;
     const filename = decodeURIComponent(button.dataset.filename);
-    if (!await showConfirm(`Video “${filename}” akan dihapus permanen.`, 'Hapus video?')) return;
+    if (!await showConfirm(`Video "${filename}" akan dihapus secara permanen.`, 'Hapus video?')) return;
     const res = await fetch(`/api/gallery/${encodeURIComponent(button.dataset.source)}/${encodeURIComponent(filename)}`, await deleteRequestOptions());
     const data = await res.json();
     if (!res.ok) return showToast(data.error || 'Gagal menghapus video.', '⚠️');
@@ -940,18 +1519,21 @@
   });
 
   document.getElementById('clearGalleryBtn').addEventListener('click', async () => {
-    if (!await showConfirm('Seluruh video valid di galeri akan dihapus permanen.', 'Hapus semua video?')) return;
+    if (!await showConfirm('Seluruh video dalam galeri akan dihapus secara permanen.', 'Hapus semua video?')) return;
     const res = await fetch('/api/gallery', await deleteRequestOptions());
     const data = await res.json();
     if (!res.ok) return showToast(data.error || 'Gagal menghapus semua video.', '⚠️');
     fetchGallery();
     fetchStatus();
-    showToast('Semua video galeri berhasil dihapus.', '✓');
+    showToast('Semua video berhasil dihapus.', '✓');
   });
 
+  // Polling Intervals
   setInterval(fetchChromes, 4000);
   setInterval(fetchStatus, 2000);
   setInterval(fetchGallery, 5000);
+  
+  // Initial Fetch
   fetchChromes();
   fetchStatus();
   fetchGallery();
