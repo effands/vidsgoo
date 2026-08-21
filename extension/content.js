@@ -100,6 +100,29 @@
   }
 
   function findVideoAiButton() {
+    // 1. Target exact Google Vids video-generation icon from DevTools
+    const icon = document.querySelector('.docs-icon-video-generation-20');
+    if (icon && isVisible(icon)) {
+      return icon.closest('.appsSketchyContentLibraryRailToolbarButtonRefreshed-outer-box') ||
+             icon.closest('.appsSketchyContentLibraryRailToolbarButtonRefreshed-inner-box') ||
+             icon;
+    }
+
+    // 2. Target exact label element
+    const labels = Array.from(document.querySelectorAll('.appsSketchyContentLibraryRailToolbarButtonLabelRefreshed'));
+    const label = labels.find(l => isVisible(l) && (l.textContent || '').trim().toLowerCase() === 'video ai');
+    if (label) {
+      return label.closest('.appsSketchyContentLibraryRailToolbarButtonRefreshed-outer-box') ||
+             label.closest('.appsSketchyContentLibraryRailToolbarButtonRefreshed-inner-box') ||
+             label;
+    }
+
+    // 3. Any toolbar button with class appsSketchyContentLibraryRailToolbarButton
+    const outerBoxes = Array.from(document.querySelectorAll('.appsSketchyContentLibraryRailToolbarButtonRefreshed-outer-box, .appsSketchyContentLibraryRailToolbarButtonRefreshed-inner-box'));
+    const box = outerBoxes.find(b => isVisible(b) && (b.textContent || '').toLowerCase().includes('video ai'));
+    if (box) return box;
+
+    // 4. Fallback search across all buttons and clickable divs
     const candidates = Array.from(document.querySelectorAll(
       'button, [role="button"], [role="tab"], [role="menuitem"], div[tabindex], div[aria-label], span[aria-label], div, span'
     ));
@@ -138,7 +161,6 @@
       const rect = button.getBoundingClientRect();
       const isCircularSubmit = rect.width >= 24 && rect.width <= 70 && rect.height >= 24 && rect.height <= 70;
       if (isCircularSubmit && (aria.includes('buat') || aria.includes('kirim') || aria.includes('submit') || text === '')) {
-        // Must be near bottom of prompt container
         return true;
       }
       return false;
@@ -246,15 +268,20 @@
     const rect = el.getBoundingClientRect();
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
-    ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach(eventType => {
-      el.dispatchEvent(new MouseEvent(eventType, {
-        bubbles: true,
-        cancelable: true,
-        view: window,
-        clientX: x,
-        clientY: y
-      }));
-    });
+    const opts = {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: x,
+      clientY: y,
+      button: 0,
+      buttons: 1
+    };
+    el.dispatchEvent(new PointerEvent('pointerdown', opts));
+    el.dispatchEvent(new MouseEvent('mousedown', opts));
+    el.dispatchEvent(new PointerEvent('pointerup', { ...opts, buttons: 0 }));
+    el.dispatchEvent(new MouseEvent('mouseup', { ...opts, buttons: 0 }));
+    el.dispatchEvent(new MouseEvent('click', { ...opts, buttons: 0 }));
     try { el.click(); } catch (_) {}
   }
 
