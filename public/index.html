@@ -572,6 +572,32 @@
       gap: 8px;
     }
 
+    .icon-btn-delete {
+      background: transparent;
+      border: none;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s ease, background-color 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .icon-btn-delete:hover {
+      color: var(--status-danger-text);
+      background-color: var(--status-danger-bg);
+    }
+
+    .icon-btn-delete:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
     .badge {
       display: inline-flex;
       align-items: center;
@@ -743,7 +769,7 @@
       padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       transition: border-color 0.15s ease;
     }
 
@@ -751,13 +777,11 @@
       border-color: var(--border-strong);
     }
 
-    .gallery-card video {
-      width: 100%;
-      height: 180px;
-      object-fit: contain;
-      background: #000000;
-      border-radius: 6px;
-      border: 1px solid var(--border-subtle);
+    .gallery-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
     }
 
     .gallery-filename {
@@ -769,6 +793,15 @@
       white-space: nowrap;
     }
 
+    .gallery-card video {
+      width: 100%;
+      height: 180px;
+      object-fit: contain;
+      background: #000000;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+    }
+
     .gallery-meta {
       display: flex;
       justify-content: space-between;
@@ -776,13 +809,7 @@
       font-size: 0.75rem;
       color: var(--text-secondary);
       gap: 6px;
-    }
-
-    .gallery-actions {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 8px;
-      margin-top: 4px;
+      padding-top: 2px;
     }
 
     .log-stream-box {
@@ -1217,6 +1244,9 @@
       <div class="card-header">
         <h2>Galeri Video Downloaded</h2>
         <div class="action-group">
+          <button id="openFolderBtn" class="btn btn-sm btn-secondary" type="button" title="Buka folder hasil download di File Explorer">
+            📂 Buka Folder
+          </button>
           <button id="refreshGalleryBtn" class="btn btn-sm btn-secondary" type="button">
             Refresh
           </button>
@@ -1759,19 +1789,16 @@
       const targetPath = (v && (v.relativePath || v.filename)) ? (v.relativePath || v.filename) : '';
       return `
         <div class="gallery-card">
+          <div class="gallery-header-row">
+            <div class="gallery-filename" title="${escapeHtml(v.filename)}">${escapeHtml(v.filename)}</div>
+            <button class="icon-btn-delete delete-video-btn" data-source="${escapeHtml(v.source)}" data-filename="${encodeURIComponent(String(targetPath))}" type="button" title="Hapus video ini" aria-label="Hapus video">
+              🗑
+            </button>
+          </div>
           <video data-video-key="${galleryVideoKey(v)}" controls preload="metadata" playsinline src="${escapeHtml(v.url)}"></video>
-          <div class="gallery-filename" title="${escapeHtml(v.filename)}">${escapeHtml(v.filename)}</div>
           <div class="gallery-meta">
             <span class="badge badge-folder">📁 ${escapeHtml(v.category || 'Umum')}</span>
             <span>💾 ${escapeHtml(v.sizeMB)} MB · ${escapeHtml(v.sourceLabel)}</span>
-          </div>
-          <div class="gallery-actions">
-            <a href="${escapeHtml(v.url)}" download="${escapeHtml(v.filename)}" class="btn btn-sm btn-primary" style="text-align: center;">
-              Download
-            </a>
-            <button class="btn btn-sm btn-danger-outline delete-video-btn" data-source="${escapeHtml(v.source)}" data-filename="${encodeURIComponent(String(targetPath))}" type="button">
-              Hapus
-            </button>
           </div>
         </div>
       `;
@@ -1822,6 +1849,30 @@
     } catch (err) {
       console.error('Gagal mengambil galeri:', err);
     }
+  }
+
+  const openFolderBtn = document.getElementById('openFolderBtn');
+  if (openFolderBtn && typeof openFolderBtn.addEventListener === 'function') {
+    openFolderBtn.addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/gallery/open-folder', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Dashboard-Request': 'Google-Vids-Dashboard'
+          },
+          body: JSON.stringify({ category: selectedCategory })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Membuka folder video di File Explorer...', '📂');
+        } else {
+          showToast(data.error || 'Gagal membuka folder.', '⚠️');
+        }
+      } catch (err) {
+        showToast('Gagal membuka folder.', '⚠️');
+      }
+    });
   }
 
   document.getElementById('refreshGalleryBtn').addEventListener('click', fetchGallery);

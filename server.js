@@ -154,6 +154,34 @@ app.delete('/api/gallery', requireDashboardOrigin, requireDeleteToken, (req, res
   res.json({ success: failures.length === 0, deleted, failures });
 });
 
+const { exec } = require('child_process');
+
+app.post('/api/gallery/open-folder', requireDashboardOrigin, (req, res) => {
+  try {
+    const { category } = req.body || {};
+    let targetDir = chromeDownloadDir;
+    if (category && category !== 'ALL' && category !== 'Umum') {
+      const safeCat = String(category).replace(/[<>:"/\\|?*\x00-\x1F]/g, '').trim();
+      const subDir = path.join(chromeDownloadDir, safeCat);
+      if (fs.existsSync(subDir)) targetDir = subDir;
+    }
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
+
+    if (process.platform === 'win32') {
+      exec(`explorer.exe "${targetDir}"`);
+    } else if (process.platform === 'darwin') {
+      exec(`open "${targetDir}"`);
+    } else {
+      exec(`xdg-open "${targetDir}"`);
+    }
+    res.json({ success: true, path: targetDir });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Store active Chrome instances
 let chromeInstances = [
   { id: 'chrome1', name: 'Chrome Profile 1 (Port 9222)', port: 9222, status: 'unknown' },
