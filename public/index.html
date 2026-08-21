@@ -351,38 +351,61 @@
 
     .affiliate-grid {
       display: grid;
-      grid-template-columns: 360px minmax(0, 1fr);
+      grid-template-columns: 380px minmax(0, 1fr);
       gap: 20px;
       align-items: start;
     }
 
-    /* Media Uploader Slots */
-    .media-slot-card {
+    /* 3-Slot Media Attachment Cards */
+    .slots-container {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .media-slot-item {
       background: var(--bg-inset);
       border: 1px solid var(--border-subtle);
       border-radius: 10px;
-      padding: 16px;
-      margin-bottom: 16px;
+      padding: 14px;
+      transition: border-color 0.15s ease;
     }
 
-    .media-slot-card:last-child {
-      margin-bottom: 0;
+    .media-slot-item:hover {
+      border-color: var(--border-strong);
     }
 
-    .media-slot-title {
-      font-size: 0.875rem;
-      font-weight: 700;
-      color: var(--text-primary);
+    .media-slot-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 10px;
     }
 
-    .dropzone-box {
+    .media-slot-label {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .media-slot-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--accent-tint);
+      border: 1px solid var(--status-info-border);
+      color: var(--accent-text);
+    }
+
+    .slot-dropzone {
       border: 2px dashed var(--border-strong);
       border-radius: 8px;
-      padding: 18px 14px;
+      padding: 14px;
       text-align: center;
       background: var(--bg-surface);
       cursor: pointer;
@@ -390,65 +413,51 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
     }
 
-    .dropzone-box:hover {
+    .slot-dropzone:hover {
       border-color: var(--accent-text);
       background: var(--bg-surface-hover);
     }
 
-    .dropzone-icon {
-      font-size: 1.5rem;
+    .slot-dropzone-icon {
+      font-size: 1.35rem;
     }
 
-    .dropzone-text {
+    .slot-dropzone-text {
       font-size: 0.8125rem;
       font-weight: 600;
       color: var(--text-primary);
     }
 
-    .dropzone-sub {
-      font-size: 0.725rem;
+    .slot-dropzone-sub {
+      font-size: 0.6875rem;
       color: var(--text-secondary);
     }
 
-    .media-preview-container {
+    .slot-preview-box {
       position: relative;
       border-radius: 8px;
       overflow: hidden;
       border: 1px solid var(--border-subtle);
       background: #000;
+      height: 110px;
     }
 
-    .media-preview-img {
+    .slot-preview-img {
       width: 100%;
-      height: 160px;
+      height: 100%;
       object-fit: cover;
       display: block;
     }
 
-    .media-badge-tag {
+    .slot-remove-btn {
       position: absolute;
-      bottom: 8px;
-      left: 8px;
-      background: rgba(11, 15, 23, 0.85);
-      border: 1px solid var(--border-strong);
-      color: #38bdf8;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.725rem;
-      font-weight: 700;
-      backdrop-filter: blur(4px);
-    }
-
-    .media-remove-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      width: 28px;
-      height: 28px;
+      top: 6px;
+      right: 6px;
+      width: 26px;
+      height: 26px;
       border-radius: 50%;
       background: rgba(239, 68, 68, 0.9);
       color: #fff;
@@ -457,35 +466,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       transition: transform 0.1s ease, background-color 0.15s ease;
     }
 
-    .media-remove-btn:hover {
+    .slot-remove-btn:hover {
       background: #dc2626;
       transform: scale(1.1);
-    }
-
-    .product-thumbs-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .product-thumb-item {
-      position: relative;
-      border-radius: 6px;
-      overflow: hidden;
-      border: 1px solid var(--border-subtle);
-      background: #000;
-      height: 110px;
-    }
-
-    .product-thumb-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
     }
 
     .quick-tag-pill {
@@ -1227,9 +1214,6 @@
       .dialog-actions {
         grid-template-columns: 1fr;
       }
-      .product-thumbs-grid {
-        grid-template-columns: 1fr;
-      }
     }
   </style>
 </head>
@@ -1403,56 +1387,74 @@
     </div>
   </section>
 
-  <!-- TAB 2: Affiliate Video UGC Studio (NEW) -->
+  <!-- TAB 2: Affiliate Video UGC Studio (NEW: 3 Slot Max Upload & Hook Generator) -->
   <section id="pane-affiliate" class="tab-pane" role="tabpanel" aria-labelledby="tab-affiliate">
     <div class="affiliate-grid">
-      <!-- Media Slot Manager (Avatar + Products) -->
+      <!-- 3-Slot Media Uploaders (Avatar + 2 Product Details) -->
       <div>
-        <!-- Slot 1: Foto Avatar / Kreator -->
         <div class="studio-card">
           <div class="card-header">
             <h2>
-              <span>1. Foto Avatar / Model UGC</span>
+              <span>Upload Gambar (Maksimal 3)</span>
             </h2>
-            <span class="badge badge-info">@Gambar1</span>
+            <span class="badge badge-info" id="affSlotCountBadge">0 / 3 Gambar</span>
           </div>
           <div class="card-body">
-            <input type="file" id="affAvatarInput" accept="image/*" style="display: none;">
-            
-            <div id="affAvatarDropzone" class="dropzone-box" onclick="document.getElementById('affAvatarInput').click()">
-              <div class="dropzone-icon">👤</div>
-              <div class="dropzone-text">Pilih Foto Avatar Kreator</div>
-              <div class="dropzone-sub">PNG, JPG, WebP (Maks 10MB)</div>
-            </div>
+            <div class="slots-container">
+              <!-- Slot 1: Avatar / Model Orang -->
+              <div class="media-slot-item">
+                <div class="media-slot-header">
+                  <span class="media-slot-label">👤 1. Foto Avatar / Model UGC</span>
+                  <span class="media-slot-tag">@Gambar1</span>
+                </div>
+                <input type="file" id="slotInput1" accept="image/*" style="display: none;">
+                <div id="slotDropzone1" class="slot-dropzone" onclick="document.getElementById('slotInput1').click()">
+                  <div class="slot-dropzone-icon">👤</div>
+                  <div class="slot-dropzone-text">Pilih Foto Orang / Avatar</div>
+                  <div class="slot-dropzone-sub">Model kreator UGC yang akan mempromosikan</div>
+                </div>
+                <div id="slotPreviewWrap1" class="slot-preview-box" style="display: none;">
+                  <img id="slotImg1" class="slot-preview-img" alt="Slot 1 Preview">
+                  <button type="button" class="slot-remove-btn" onclick="clearSlot(1)" title="Hapus Foto">✕</button>
+                </div>
+              </div>
 
-            <div id="affAvatarPreviewWrap" style="display: none; margin-top: 12px;">
-              <div class="media-preview-container">
-                <img id="affAvatarImg" class="media-preview-img" alt="Avatar Preview">
-                <span class="media-badge-tag">@Gambar1 (Avatar)</span>
-                <button type="button" class="media-remove-btn" onclick="removeAffAvatar()" title="Hapus Avatar">✕</button>
+              <!-- Slot 2: Foto Produk Utama -->
+              <div class="media-slot-item">
+                <div class="media-slot-header">
+                  <span class="media-slot-label">📦 2. Foto Produk Utama</span>
+                  <span class="media-slot-tag">@Gambar2</span>
+                </div>
+                <input type="file" id="slotInput2" accept="image/*" style="display: none;">
+                <div id="slotDropzone2" class="slot-dropzone" onclick="document.getElementById('slotInput2').click()">
+                  <div class="slot-dropzone-icon">🎧</div>
+                  <div class="slot-dropzone-text">Pilih Foto Produk Utama</div>
+                  <div class="slot-dropzone-sub">Foto produk tampak depan / fokus utama</div>
+                </div>
+                <div id="slotPreviewWrap2" class="slot-preview-box" style="display: none;">
+                  <img id="slotImg2" class="slot-preview-img" alt="Slot 2 Preview">
+                  <button type="button" class="slot-remove-btn" onclick="clearSlot(2)" title="Hapus Foto">✕</button>
+                </div>
+              </div>
+
+              <!-- Slot 3: Foto Detail Produk / Sudut 2 -->
+              <div class="media-slot-item">
+                <div class="media-slot-header">
+                  <span class="media-slot-label">🔍 3. Foto Detail / Sudut Produk</span>
+                  <span class="media-slot-tag">@Gambar3</span>
+                </div>
+                <input type="file" id="slotInput3" accept="image/*" style="display: none;">
+                <div id="slotDropzone3" class="slot-dropzone" onclick="document.getElementById('slotInput3').click()">
+                  <div class="slot-dropzone-icon">✨</div>
+                  <div class="slot-dropzone-text">+ Foto Detail / Sudut Lain (Opsional)</div>
+                  <div class="slot-dropzone-sub">Detail lipatan, warna, tekstur, atau kemasan</div>
+                </div>
+                <div id="slotPreviewWrap3" class="slot-preview-box" style="display: none;">
+                  <img id="slotImg3" class="slot-preview-img" alt="Slot 3 Preview">
+                  <button type="button" class="slot-remove-btn" onclick="clearSlot(3)" title="Hapus Foto">✕</button>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- Slot 2+: Foto Detail Produk -->
-        <div class="studio-card">
-          <div class="card-header">
-            <h2>
-              <span>2. Foto Produk &amp; Detail</span>
-            </h2>
-            <span class="badge badge-info" id="affProductCountBadge">0 Produk</span>
-          </div>
-          <div class="card-body">
-            <input type="file" id="affProductInput" accept="image/*" multiple style="display: none;">
-            
-            <div id="affProductDropzone" class="dropzone-box" onclick="document.getElementById('affProductInput').click()">
-              <div class="dropzone-icon">📦</div>
-              <div class="dropzone-text">+ Tambah Foto Produk / Angle</div>
-              <div class="dropzone-sub">Bisa pilih 1 atau beberapa foto produk sekaligus</div>
-            </div>
-
-            <div id="affProductThumbsGrid" class="product-thumbs-grid"></div>
           </div>
         </div>
       </div>
@@ -1462,38 +1464,38 @@
         <div class="studio-card">
           <div class="card-header">
             <h2>
-              <span>Smart Affiliate Prompt Builder</span>
+              <span>Smart Affiliate Copywriter (Formula UGC)</span>
             </h2>
-            <span class="badge badge-success">AI Copywriter</span>
+            <span class="badge badge-success">Prompt Generator</span>
           </div>
           <div class="card-body">
             <!-- Product Parameters Form -->
-            <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; margin-bottom: 14px;">
+            <div style="display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px; margin-bottom: 14px;">
               <div class="form-group" style="margin-bottom: 0;">
-                <label for="affProductName">Nama Produk Affiliate</label>
-                <input type="text" id="affProductName" placeholder="Contoh: TWS Wireless Earphone ANC Pro" oninput="syncAffFolder()">
+                <label for="affProductName">Nama Produk Affiliate &amp; Varian</label>
+                <input type="text" id="affProductName" placeholder="Contoh: Marshall Major V Headphone warna Cream" oninput="syncAffFolder()">
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label for="affStyle">Gaya Promosi / Tone of Voice</label>
+                <label for="affStyle">Gaya Promosi / Formula Hook</label>
                 <select id="affStyle">
-                  <option value="ugc_viral">UGC Kasual &amp; Antusias (Gaya TikTok Viral)</option>
-                  <option value="honest_review">Review Jujur &amp; Storytelling Pengalaman Pakai</option>
-                  <option value="flash_sale">Flash Sale &amp; Promo Diskon Kilat (Mendesak)</option>
+                  <option value="hook_ugc_2s">Hook 2 Detik Pertama (Formula UGC Viral)</option>
+                  <option value="honest_review">Review Jujur Pengalaman Pakai</option>
+                  <option value="flash_sale">Flash Sale Promo Diskon Mendesak</option>
                   <option value="problem_solution">Problem &amp; Solution (Masalah ke Solusi)</option>
-                  <option value="aesthetic">Aesthetic Showcase &amp; Clean Showcase</option>
+                  <option value="aesthetic">Aesthetic Clean Showcase</option>
                 </select>
               </div>
             </div>
 
             <div class="form-group">
-              <label for="affProductUsp">Poin Keunggulan / Fitur Utama Produk</label>
-              <input type="text" id="affProductUsp" placeholder="Contoh: Bass jernih, noise cancelling aktif, baterai 40 jam, diskon 50% hari ini">
+              <label for="affProductUsp">Poin Keunggulan / USP / Detail Fitur</label>
+              <input type="text" id="affProductUsp" placeholder="Contoh: Baterai awet 100 jam, suara bass jernih menggelegar, desain lipat compact">
             </div>
 
             <div style="display: grid; grid-template-columns: minmax(0, 1.4fr) 140px; gap: 14px; margin-bottom: 16px;">
               <div class="form-group" style="margin-bottom: 0;">
                 <label for="affCta">Call To Action (CTA)</label>
-                <input type="text" id="affCta" value="Langsung klik keranjang kuning di bawah sekarang sebelum kehabisan!">
+                <input type="text" id="affCta" value="klik keranjang sekarang">
               </div>
               <div class="form-group" style="margin-bottom: 0;">
                 <label for="affVariationCount">Jumlah Variasi</label>
@@ -1505,17 +1507,16 @@
               </div>
             </div>
 
-            <button type="button" id="generateAffScriptBtn" class="btn btn-secondary btn-full" style="margin-bottom: 20px;">
-              ✨ Susun Prompt Affiliate Otomatis (@Gambar1 &amp; @Gambar2)
+            <button type="button" id="generateAffScriptBtn" class="btn btn-secondary btn-full" style="margin-bottom: 16px;">
+              ✨ Susun Prompt Affiliate Otomatis (@Gambar1, @Gambar2 &amp; @Gambar3)
             </button>
 
             <!-- Tag Insert Shortcuts -->
             <div class="tag-inserters-row">
-              <span style="font-size: 0.775rem; font-weight: 700; color: var(--text-secondary);">Sisipkan Tag Cepat:</span>
+              <span style="font-size: 0.775rem; font-weight: 700; color: var(--text-secondary);">Sisipkan Tag:</span>
               <button type="button" class="quick-tag-pill" onclick="insertAffTag('@Gambar1')">+ @Gambar1 (Avatar)</button>
               <button type="button" class="quick-tag-pill" onclick="insertAffTag('@Gambar2')">+ @Gambar2 (Produk Utama)</button>
-              <button type="button" class="quick-tag-pill" onclick="insertAffTag('@Gambar3')">+ @Gambar3 (Detail 1)</button>
-              <button type="button" class="quick-tag-pill" onclick="insertAffTag('@Gambar4')">+ @Gambar4 (Detail 2)</button>
+              <button type="button" class="quick-tag-pill" onclick="insertAffTag('@Gambar3')">+ @Gambar3 (Detail Produk)</button>
             </div>
 
             <!-- Batch Prompts Editor -->
@@ -1523,11 +1524,11 @@
               <div class="form-group">
                 <label for="affPrompts">Prompt Video Affiliate (Batch)</label>
                 <div class="prompt-composer-shell">
-                  <textarea id="affPrompts" placeholder="@Gambar1 memegang dan mereview produk @Gambar2 dengan antusias, menjelaskan keunggulan suara jernih dan noise cancelling dalam bahasa indonesia kasual.&#10;&#10;@Gambar1 menunjukkan detail @Gambar2 sambil tersenyum ke kamera, mengajak penonton checkout di keranjang kuning." required></textarea>
+                  <textarea id="affPrompts" placeholder="@Gambar1 buatkan video UGC affiliate dengan 2 detik pertama HOOK untuk @Gambar2 produk @Gambar3 promosikan dalam bahasa indonesia, produk tentang Marshall Major V Headphone warna Cream, akhiri CTA untuk klik keranjang sekarang." required></textarea>
                   <aside class="prompt-syntax-guide">
                     <div>
                       <strong>Aturan 1 Blok = 1 Video</strong>
-                      Gunakan tag <kbd>@Gambar1</kbd> untuk Avatar dan <kbd>@Gambar2</kbd> untuk Produk. Pisahkan antar video dengan:
+                      Format tag <kbd>@Gambar1</kbd> (Avatar), <kbd>@Gambar2</kbd> (Produk), dan <kbd>@Gambar3</kbd> (Detail). Pisahkan antar video dengan:
                     </div>
                     <div style="margin-top: 10px;">
                       <kbd>Enter</kbd> + <kbd>Enter</kbd>
@@ -1548,7 +1549,7 @@
                 </div>
                 <div class="form-group">
                   <label for="affFolder">Folder Sub-Folder Download</label>
-                  <input type="text" id="affFolder" placeholder="Contoh: Affiliate_EarphoneANC">
+                  <input type="text" id="affFolder" placeholder="Contoh: Affiliate_MarshallHeadphone">
                 </div>
                 <div class="form-group">
                   <label for="affTargetChrome">Pilih Eksekutor Chrome</label>
@@ -1563,7 +1564,7 @@
                   🚀 Masukkan Batch Affiliate ke Antrean
                 </button>
                 <span style="font-size: 0.8125rem; color: var(--text-secondary);">
-                  Otomatis dieksekusi dengan referensi Avatar &amp; detail foto produk.
+                  Otomatis dieksekusi dengan referensi upload 2-3 gambar di Google Vids.
                 </span>
               </div>
             </form>
@@ -1843,38 +1844,40 @@
   }
 
   /* ==========================================================================
-     Affiliate Media Management State (Avatar & Product Thumbs)
+     3-Slot Media Uploaders (Avatar & 2 Products Max 3)
      ========================================================================== */
-  let affAvatarData = null; // { name, dataUrl }
-  let affProductDataList = []; // [ { name, dataUrl }, ... ]
+  const slotData = [null, null, null]; // [ { name, dataUrl }, ... ]
 
-  const affAvatarInput = document.getElementById('affAvatarInput');
-  const affProductInput = document.getElementById('affProductInput');
+  function setupSlot(slotNum) {
+    const input = document.getElementById(`slotInput${slotNum}`);
+    if (!input) return;
 
-  if (affAvatarInput) {
-    affAvatarInput.addEventListener('change', event => {
+    input.addEventListener('change', event => {
       const file = event.target.files?.[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = e => {
-        affAvatarData = { name: file.name, dataUrl: e.target.result };
-        renderAffAvatar();
-        showToast('Foto Avatar berhasil dimuat!', '👤');
+        slotData[slotNum - 1] = { name: file.name, dataUrl: e.target.result };
+        renderSlot(slotNum);
+        updateSlotBadge();
+        const roleName = slotNum === 1 ? 'Avatar' : slotNum === 2 ? 'Produk Utama' : 'Detail Produk';
+        showToast(`Foto ${roleName} (@Gambar${slotNum}) berhasil dimuat!`, '📸');
       };
       reader.readAsDataURL(file);
     });
   }
 
-  function renderAffAvatar() {
-    const dropzone = document.getElementById('affAvatarDropzone');
-    const previewWrap = document.getElementById('affAvatarPreviewWrap');
-    const imgNode = document.getElementById('affAvatarImg');
+  function renderSlot(slotNum) {
+    const dropzone = document.getElementById(`slotDropzone${slotNum}`);
+    const previewWrap = document.getElementById(`slotPreviewWrap${slotNum}`);
+    const imgNode = document.getElementById(`slotImg${slotNum}`);
     if (!dropzone || !previewWrap || !imgNode) return;
 
-    if (affAvatarData) {
+    const data = slotData[slotNum - 1];
+    if (data) {
       dropzone.style.display = 'none';
       previewWrap.style.display = 'block';
-      imgNode.src = affAvatarData.dataUrl;
+      imgNode.src = data.dataUrl;
     } else {
       dropzone.style.display = 'flex';
       previewWrap.style.display = 'none';
@@ -1882,64 +1885,24 @@
     }
   }
 
-  window.removeAffAvatar = function() {
-    affAvatarData = null;
-    if (affAvatarInput) affAvatarInput.value = '';
-    renderAffAvatar();
+  window.clearSlot = function(slotNum) {
+    slotData[slotNum - 1] = null;
+    const input = document.getElementById(`slotInput${slotNum}`);
+    if (input) input.value = '';
+    renderSlot(slotNum);
+    updateSlotBadge();
   };
 
-  if (affProductInput) {
-    affProductInput.addEventListener('change', event => {
-      const files = Array.from(event.target.files || []);
-      if (!files.length) return;
-
-      let remaining = files.length;
-      files.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = e => {
-          affProductDataList.push({ name: file.name, dataUrl: e.target.result });
-          remaining--;
-          if (remaining === 0) {
-            renderAffProducts();
-            showToast(`${files.length} Foto Produk ditambahkan!`, '📦');
-          }
-        };
-        reader.readAsDataURL(file);
-      });
-      affProductInput.value = '';
-    });
-  }
-
-  function renderAffProducts() {
-    const grid = document.getElementById('affProductThumbsGrid');
-    const countBadge = document.getElementById('affProductCountBadge');
-    if (!grid) return;
-
+  function updateSlotBadge() {
+    const countBadge = document.getElementById('affSlotCountBadge');
+    const filledCount = slotData.filter(Boolean).length;
     if (countBadge) {
-      countBadge.textContent = `${affProductDataList.length} Produk`;
+      countBadge.textContent = `${filledCount} / 3 Gambar`;
+      countBadge.className = filledCount > 0 ? 'badge badge-success' : 'badge badge-info';
     }
-
-    if (!affProductDataList.length) {
-      grid.innerHTML = '';
-      return;
-    }
-
-    grid.innerHTML = affProductDataList.map((item, idx) => {
-      const tagIndex = idx + 2; // Avatar is Gambar1, Products start at Gambar2
-      return `
-        <div class="product-thumb-item">
-          <img src="${item.dataUrl}" alt="Produk ${tagIndex}">
-          <span class="media-badge-tag">@Gambar${tagIndex}</span>
-          <button type="button" class="media-remove-btn" onclick="removeAffProduct(${idx})" title="Hapus Foto">✕</button>
-        </div>
-      `;
-    }).join('');
   }
 
-  window.removeAffProduct = function(index) {
-    affProductDataList.splice(index, 1);
-    renderAffProducts();
-  };
+  [1, 2, 3].forEach(setupSlot);
 
   window.syncAffFolder = function() {
     const name = document.getElementById('affProductName')?.value || '';
@@ -1965,51 +1928,55 @@
   const generateAffScriptBtn = document.getElementById('generateAffScriptBtn');
   if (generateAffScriptBtn) {
     generateAffScriptBtn.addEventListener('click', () => {
-      const prodName = document.getElementById('affProductName')?.value?.trim() || 'Produk Unggulan';
-      const usp = document.getElementById('affProductUsp')?.value?.trim() || 'kualitas terbaik dan desain modern';
-      const cta = document.getElementById('affCta')?.value?.trim() || 'Langsung klik keranjang kuning sekarang!';
-      const style = document.getElementById('affStyle')?.value || 'ugc_viral';
+      const prodName = document.getElementById('affProductName')?.value?.trim() || 'Marshall Major V Headphone warna Cream';
+      const usp = document.getElementById('affProductUsp')?.value?.trim() || 'suara bass jernih menggelegar dan baterai awet 100 jam';
+      const cta = document.getElementById('affCta')?.value?.trim() || 'klik keranjang sekarang';
+      const style = document.getElementById('affStyle')?.value || 'hook_ugc_2s';
       const count = parseInt(document.getElementById('affVariationCount')?.value || '3', 10);
 
+      // Check if 3rd slot (detail) is active
+      const hasSlot3 = !!slotData[2];
+      const productRef = hasSlot3 ? 'untuk @Gambar2 produk @Gambar3' : 'untuk produk @Gambar2';
+
       const templates = {
-        ugc_viral: [
-          `@Gambar1 mereview @Gambar2 dengan ekspresi kaget dan antusias, memperlihatkan produk ke kamera lalu menjelaskan keunggulan ${usp}. Nada bicara kasual santai ala kreator TikTok viral. Di akhir, @Gambar1 menunjuk ke bawah sambil mengingatkan "${cta}".`,
-          `@Gambar1 membuka unboxing @Gambar2 dengan penuh semangat, mencoba langsung fiturnya yang ${usp}, lalu memberikan senyuman puas ke kamera. Bahasa kasual ramah, mengajak audiens "${cta}".`,
-          `Kamera menyorot @Gambar1 yang sedang beraktivitas lalu memakai @Gambar2. @Gambar1 menjelaskan betapa terbantunya setelah pakai produk ini karena ${usp}. Diakhiri ajakan "${cta}".`,
-          `@Gambar1 membandingkan pengalaman sebelum dan sesudah memiliki @Gambar2. Menunjukkan keunggulan ${usp} secara detail dan meyakinkan. Bahasa santai, call to action "${cta}".`,
-          `@Gambar1 tersenyum membawa @Gambar2, merekomendasikan produk ini sebagai barang wajib punya karena ${usp}. Kamera zoom in produk dengan sinematik, ditutup ajakan "${cta}".`
+        hook_ugc_2s: [
+          `@Gambar1 buatkan video UGC affiliate dengan 2 detik pertama HOOK ${productRef} promosikan dalam bahasa indonesia, produk tentang ${prodName}, keunggulan ${usp}, akhiri CTA untuk ${cta}.`,
+          `@Gambar1 memegang dan mereview ${productRef} dengan antusias di awal video. Menunjukkan detail fisik ${prodName} dan menjelaskan ${usp} dalam bahasa santai kekinian, diakhiri ajakan tegas untuk ${cta}.`,
+          `Video UGC vertikal diawali @Gambar1 yang kagum melihat keindahan ${productRef}. Memperlihatkan kepraktisan ${prodName} (${usp}) lalu menatap ramah ke kamera mengajak penonton ${cta}.`,
+          `@Gambar1 mendemonstrasikan pengalaman memakai ${productRef} dengan penuh percaya diri. Menjelaskan alasan kenapa wajib beli ${prodName} karena ${usp}, akhiri dengan ajakan ${cta}.`,
+          `@Gambar1 unboxing ${productRef} dengan transisi cepat dan dinamis. Menyorot tekstur premium ${prodName} dan kelebihan ${usp}, ditutup ajakan segera ${cta}.`
         ],
         honest_review: [
-          `@Gambar1 memberikan review jujur tentang ${prodName} @Gambar2 setelah pemakaian rutin, menjelaskan detail fitur ${usp} secara mendalam dan terpercaya. Video diakhiri dengan rekomendasi tulus "${cta}".`,
-          `@Gambar1 duduk santai di depan kamera memegang @Gambar2, menceritakan pengalaman pribadi yang puas dengan ${usp}. Nada bicara bersahabat dan meyakinkan penonton untuk "${cta}".`,
-          `@Gambar1 mendemonstrasikan cara kerja ${prodName} @Gambar2 secara step-by-step, menekankan kelebihan ${usp}. Visual bersih profesional, diakhiri ajakan "${cta}".`,
-          `@Gambar1 menyorot detail fisik @Gambar2 sambil menjelaskan nilai guna dan keunggulan ${usp}. Gaya review objektif dan jelas, ditutup call to action "${cta}".`,
-          `@Gambar1 membagikan tips penggunaan optimal ${prodName} @Gambar2 dengan menonjolkan fitur ${usp}. Nada bicara informatif dan ramah, mengajak audiens "${cta}".`
+          `@Gambar1 memberikan review jujur ${productRef} setelah pemakaian intensif, membahas secara detail ${prodName} dengan fitur ${usp}. Nada bicara terpercaya dan bersahabat, akhiri CTA untuk ${cta}.`,
+          `@Gambar1 duduk santai di depan kamera menunjukkan ${productRef}, menceritakan kepuasan menggunakan ${prodName} berkat ${usp}. Diakhiri rekomendasi hangat untuk ${cta}.`,
+          `@Gambar1 membedah kelebihan ${productRef} secara objektif, menonjolkan fitur unggulan ${prodName} (${usp}). Visual jernih dan meyakinkan penonton untuk ${cta}.`,
+          `@Gambar1 membagikan tips pemakaian terbaik untuk ${productRef}, memperlihatkan efektivitas ${prodName} dengan ${usp}, ditutup ajakan tulus untuk ${cta}.`,
+          `@Gambar1 membandingkan ${productRef} dengan produk sejenis, membuktikan keunggulan ${prodName} yang ${usp}. Diakhiri ajakan checkout ${cta}.`
         ],
         flash_sale: [
-          `@Gambar1 memperlihatkan ${prodName} @Gambar2 dengan gestur mendesak dan heboh, mengumumkan diskon spesial karena produk memiliki ${usp}. Nada cepat penuh energi, mengajak "${cta}".`,
-          `@Gambar1 memegang @Gambar2 sambil mengingatkan promo terbatas hari ini untuk produk dengan kelebihan ${usp}. Visual dinamis bergerak cepat, diakhiri seruan "${cta}".`,
-          `@Gambar1 merekomendasikan penawaran harga terbaik untuk ${prodName} @Gambar2, menonjolkan ${usp} yang tidak boleh dilewatkan. Nada antusias, langsung ajak "${cta}".`,
-          `@Gambar1 memberikan peringatan stok menipis untuk ${prodName} @Gambar2, menjelaskan ${usp} yang membuatnya cepat habis. Ajakan tegas "${cta}".`,
-          `@Gambar1 menunjukkan bukti kepuasan memiliki ${prodName} @Gambar2 dan menyuruh penonton segera checkout promo ${usp}. Seruan mendesak "${cta}".`
+          `@Gambar1 mengumumkan diskon heboh ${productRef} dengan nada mendesak penuh energi. Menjelaskan ${prodName} punya ${usp} dan stok terbatas, akhiri CTA untuk ${cta}.`,
+          `@Gambar1 memegang ${productRef} sambil mengingatkan penonton agar tidak ketinggalan harga spesial ${prodName} (${usp}). Seruan cepat dan tegas untuk ${cta}.`,
+          `@Gambar1 memberikan peringatan promo kilat untuk ${productRef}, menonjolkan nilai terbaik dari ${prodName} berkat ${usp}. Langsung ajak penonton ${cta}.`,
+          `@Gambar1 menunjukkan bukti produk ${productRef} yang laris manis karena ${usp}, menyuruh audiens segera ambil promo ${prodName} sebelum habis. Diakhiri ${cta}.`,
+          `@Gambar1 memperlihatkan kepuasan memiliki ${productRef} dengan harga promo hari ini, keunggulan ${usp}. Ditutup seruan checkout cepat untuk ${cta}.`
         ],
         problem_solution: [
-          `@Gambar1 mengawali video dengan membahas masalah umum sehari-hari, lalu memperkenalkan ${prodName} @Gambar2 sebagai solusi tepat karena ${usp}. Diakhiri ajakan solusi "${cta}".`,
-          `@Gambar1 memperlihatkan rasa frustasi terhadap masalah lama, lalu tersenyum lega setelah menemukan @Gambar2 dengan keunggulan ${usp}. Nada solutif bersahabat, ditutup "${cta}".`,
-          `@Gambar1 membagikan cerita singkat kenapa dulu sering salah pilih, sampai akhirnya beralih ke ${prodName} @Gambar2 yang ${usp}. Ajakan meyakinkan "${cta}".`,
-          `@Gambar1 membedah alasan kenapa penonton butuh @Gambar2 sekarang juga untuk mengatasi kendala, berkat fitur ${usp}. Nada informatif mengedukasi, diakhiri "${cta}".`,
-          `@Gambar1 mendemonstrasikan transformasi hasil nyata memakai ${prodName} @Gambar2 dengan ${usp}. Gaya narasi inspiratif, mengajak penonton "${cta}".`
+          `@Gambar1 mengawali dengan masalah yang sering dialami audiens, lalu memperkenalkan ${productRef} sebagai solusi praktis lewat ${prodName} yang ${usp}. Diakhiri pesan ${cta}.`,
+          `@Gambar1 menceritakan rasa kesal dengan produk lama, lalu menunjukkan bagaimana ${productRef} mengatasi segalanya dengan ${usp}. Ajakan meyakinkan untuk ${cta}.`,
+          `@Gambar1 membagikan solusi cerdas menggunakan ${productRef}, memperlihatkan transformasi kemudahan dari ${prodName} (${usp}). Akhiri CTA untuk ${cta}.`,
+          `@Gambar1 membahas keluhan umum lalu menunjukkan kenapa ${productRef} adalah jawaban terbaik berkat ${usp}. Diakhiri ajakan ${cta}.`,
+          `@Gambar1 memperlihatkan hasil nyata setelah menggunakan ${productRef} pada ${prodName} (${usp}). Nada solutif inspiratif, ditutup ${cta}.`
         ],
         aesthetic: [
-          `Visual sinematik halus menampilkan @Gambar1 dan keindahan desain @Gambar2 dengan pencahayaan hangat dan estetik, menonjolkan detail ${usp}. Musik lembut, diakhiri teks ajakan "${cta}".`,
-          `@Gambar1 memegang ${prodName} @Gambar2 dalam suasana modern minimalis, gerakan kamera smooth menyorot ${usp}. Visual elegan berkelas, diakhiri ajakan halus "${cta}".`,
-          `Kamera macro bergeser menampilkan tekstur dan detail ${prodName} @Gambar2 saat digunakan oleh @Gambar1, menonjolkan ${usp}. Nuansa premium, ditutup call to action "${cta}".`,
-          `@Gambar1 menampilkan rutinitas harian yang estetik ditemani @Gambar2, memperlihatkan kemudahan dari ${usp}. Suasana menenangkan dan meyakinkan audiens "${cta}".`,
-          `Showcase produk sinematik 9:16 yang memadukan ekspresi elegan @Gambar1 dan fitur unggulan @Gambar2 (${usp}). Visual memukau, diakhiri pesan "${cta}".`
+          `Visual sinematik elegan menampilkan @Gambar1 dan keindahan ${productRef} dalam nuansa warm aesthetic, menonjolkan detail ${prodName} (${usp}). Musik lembut, diakhiri teks ajakan ${cta}.`,
+          `@Gambar1 memperagakan penggunaan ${productRef} dengan gerakan kamera slow-motion halus, menyorot detail ${prodName} dan ${usp}. Nuansa mewah berkelas, ditutup ${cta}.`,
+          `Kamera macro bergeser menampilkan keindahan tekstur ${productRef} bersama @Gambar1, memperlihatkan nilai estetik ${prodName} (${usp}). Diakhiri pesan halus ${cta}.`,
+          `Showcase produk bersih modern mempertemukan ekspresi anggun @Gambar1 dan tampilan elegan ${productRef}. Menampilkan ${usp}, ditutup ajakan ${cta}.`,
+          `Potret sinematik 9:16 yang memadukan aktivitas harian estetik @Gambar1 ditemani ${productRef}. Menampilkan kenyamanan ${prodName} (${usp}), diakhiri ${cta}.`
         ]
       };
 
-      const selectedList = templates[style] || templates.ugc_viral;
+      const selectedList = templates[style] || templates.hook_ugc_2s;
       const prompts = selectedList.slice(0, count).join('\n\n');
       
       const promptsTextarea = document.getElementById('affPrompts');
@@ -2035,14 +2002,11 @@
         return;
       }
 
-      // Collect media assets
+      // Collect media assets from slots (Max 3)
       const images = [];
-      if (affAvatarData) {
-        images.push({ type: 'avatar', tag: '@Gambar1', name: affAvatarData.name, dataUrl: affAvatarData.dataUrl });
-      }
-      affProductDataList.forEach((prod, idx) => {
-        images.push({ type: 'product', tag: `@Gambar${idx + 2}`, name: prod.name, dataUrl: prod.dataUrl });
-      });
+      if (slotData[0]) images.push({ type: 'avatar', tag: '@Gambar1', name: slotData[0].name, dataUrl: slotData[0].dataUrl });
+      if (slotData[1]) images.push({ type: 'product', tag: '@Gambar2', name: slotData[1].name, dataUrl: slotData[1].dataUrl });
+      if (slotData[2]) images.push({ type: 'product_detail', tag: '@Gambar3', name: slotData[2].name, dataUrl: slotData[2].dataUrl });
 
       const payload = {
         mode: 'affiliate',
@@ -2056,7 +2020,10 @@
       try {
         const res = await fetch('/api/queue/add', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Dashboard-Request': 'Google-Vids-Dashboard'
+          },
           body: JSON.stringify(payload)
         });
 
