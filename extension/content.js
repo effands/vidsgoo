@@ -27,25 +27,30 @@
     activeTaskId = taskId;
     cancelledTasks.delete(taskId);
 
-    let promptBox = findVisiblePromptBox();
+    // 1. Pastikan panel 'Video AI' di toolbar sisi kanan terbuka
+    let promptBox = findAiPromptBox();
     if (!promptBox) {
-      const videoAiButton = await waitFor(findVideoAiButton, 30000, 250, 'tombol Video AI pada panel kanan');
+      console.log('[Content] Panel Video AI belum terbuka. Mencari tombol Video AI di toolbar kanan...');
+      const videoAiButton = await waitFor(findVideoAiButton, 30000, 250, 'tombol Video AI pada toolbar kanan');
+      videoAiButton.scrollIntoView?.({ block: 'center' });
       simulateClick(videoAiButton);
       try {
         await trustedClick(videoAiButton, taskId, 'Membuka Panel Video AI');
       } catch (_) {}
       
-      promptBox = await waitFor(findVisiblePromptBox, 30000, 250, 'kotak prompt Google Vids');
+      promptBox = await waitFor(findAiPromptBox, 30000, 250, 'kotak prompt Google Vids');
     }
 
-    // Unggah / lampirkan gambar (Avatar & Produk) jika tersedia pada antrean task
+    // 2. Unggah / lampirkan gambar (Avatar & Produk) jika tersedia pada task affiliate
     if (Array.isArray(images) && images.length > 0) {
       await attachImagesToVids(images, promptBox, taskId);
     }
 
+    // 3. Masukkan prompt ke kotak teks
     setPrompt(promptBox, prompt);
     selectRatio(ratio);
 
+    // 4. Perluas jika ada tombol Luaskan
     const expandButton = findButton(button =>
       isVisible(button) && button.getAttribute('aria-label') === 'Luaskan'
     );
@@ -54,21 +59,90 @@
       try { await trustedClick(expandButton, taskId, 'Submitting'); } catch (_) {}
     }
 
-    const createButton = await waitFor(() => Array.from(document.querySelectorAll('button, [role="button"]')).find(button =>
-      isVisible(button) &&
-      !button.disabled &&
-      button.getAttribute('role') !== 'tab' &&
-      (button.textContent.trim() === 'Buat' || button.getAttribute('aria-label') === 'Buat' || button.getAttribute('data-tooltip') === 'Buat')
-    ), 30000, 250, 'tombol Buat');
+    // 5. Klik tombol Buat / Submit
+    const createButton = await waitFor(findCreateButton, 30000, 250, 'tombol Buat / Kirim');
 
     const existingUrls = collectVideoUrls();
     simulateClick(createButton);
     await trustedClick(createButton, taskId, 'Rendering');
 
+    // 6. Tunggu render video selesai dan unduh
     const videoUrl = await awaitVideoResult(existingUrls);
     const response = await chrome.runtime.sendMessage({ type: 'DOWNLOAD_VIDEO_FILE', videoUrl, taskId, folder: folder || '' });
     if (!response?.success) throw new Error(response?.error || 'Background gagal mengunduh video.');
     return { videoUrl, downloadId: response.downloadId };
+  }
+
+  function findAiPromptBox() {
+    const inputs = Array.from(document.querySelectorAll(
+      '[role="textbox"], textarea, [contenteditable="true"], input[type="text"]'
+    ));
+    return inputs.find(el => {
+      if (!isVisible(el)) return false;
+      const aria = (el.getAttribute('aria-label') || '').toLowerCase();
+      const placeholder = (el.getAttribute('placeholder') || '').toLowerCase();
+
+      // Specifically the video description textbox inside Video AI prompt panel
+      if (aria.includes('deskripsikan') || placeholder.includes('deskripsikan') ||
+          aria.includes('perintah') || placeholder.includes('perintah') ||
+          aria.includes('prompt') || placeholder.includes('prompt')) {
+        return true;
+      }
+
+      // Check if inside AI sidebar with "Buat" / "Edit" tabs or buttons
+      const sidebarParent = el.closest('[aria-label*="Video AI"], [aria-label*="Klip video"], [role="region"], [role="dialog"], div');
+      if (sidebarParent && sidebarParent.textContent.includes('Buat') && (aria.includes('video') || placeholder.includes('video'))) {
+        return true;
+      }
+
+      return false;
+    }) || null;
+  }
+
+  function findVideoAiButton() {
+    const candidates = Array.from(document.querySelectorAll(
+      'button, [role="button"], [role="tab"], [role="menuitem"], div[tabindex], div[aria-label], span[aria-label], div, span'
+    ));
+    return candidates.find(el => {
+      if (!isVisible(el)) return false;
+      const aria = (el.getAttribute('aria-label') || '').toLowerCase();
+      const tooltip = (el.getAttribute('data-tooltip') || el.getAttribute('title') || '').toLowerCase();
+      const text = (el.textContent || '').trim().replace(/\s+/g, ' ').toLowerCase();
+
+      if (aria === 'video ai' || aria.includes('video ai') || aria.includes('buat klip video ai') ||
+          tooltip === 'video ai' || tooltip.includes('video ai') ||
+          text === 'video ai' || text.startsWith('video ai')) {
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 && rect.width < 250 && rect.height > 0 && rect.height < 250;
+      }
+      return false;
+    });
+  }
+
+  function findCreateButton() {
+    const candidates = Array.from(document.querySelectorAll('button, [role="button"], div[role="button"]'));
+    return candidates.find(button => {
+      if (!isVisible(button) || button.disabled) return false;
+      if (button.getAttribute('role') === 'tab') return false;
+      const text = (button.textContent || '').trim().toLowerCase();
+      const aria = (button.getAttribute('aria-label') || '').toLowerCase();
+      const tooltip = (button.getAttribute('data-tooltip') || '').toLowerCase();
+
+      if (text === 'buat' || aria === 'buat' || tooltip === 'buat' ||
+          text === 'kirim' || aria === 'kirim' || tooltip === 'kirim' ||
+          aria.includes('buat video') || aria.includes('kirim perintah')) {
+        return true;
+      }
+
+      // Check blue circular submit button (arrow up icon)
+      const rect = button.getBoundingClientRect();
+      const isCircularSubmit = rect.width >= 24 && rect.width <= 70 && rect.height >= 24 && rect.height <= 70;
+      if (isCircularSubmit && (aria.includes('buat') || aria.includes('kirim') || aria.includes('submit') || text === '')) {
+        // Must be near bottom of prompt container
+        return true;
+      }
+      return false;
+    });
   }
 
   function dataUrlToFile(dataUrl, filename) {
@@ -91,13 +165,13 @@
 
     if (!files.length) return;
 
-    // Klik tombol 'Bahan' atau '+ Tambahkan' jika ada kotak upload
+    // Klik tombol 'Bahan' atau '+ Tambahkan' jika ada
     const bahanButton = findBahanOrAddButton();
     if (bahanButton) {
       simulateClick(bahanButton);
       try { await trustedClick(bahanButton, taskId, 'Klik Bahan Upload'); } catch (_) {}
       await new Promise(r => setTimeout(r, 400));
-      
+
       const uploadMenuItem = findUploadMenuItem();
       if (uploadMenuItem) {
         simulateClick(uploadMenuItem);
@@ -106,7 +180,7 @@
       }
     }
 
-    // Injeksi via file input
+    // Injeksi file input
     const fileInputs = Array.from(document.querySelectorAll('input[type="file"]'));
     if (fileInputs.length > 0) {
       const dt = new DataTransfer();
@@ -120,7 +194,7 @@
       }
     }
 
-    // Injeksi via Drag & Drop Event
+    // Drag & Drop
     try {
       const dropTarget = document.querySelector('[role="textbox"]') || promptBox;
       const dt = new DataTransfer();
@@ -130,7 +204,7 @@
       dropTarget.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }));
     } catch (_) {}
 
-    // Injeksi via Paste Event
+    // Paste
     try {
       const dt = new DataTransfer();
       files.forEach(f => dt.items.add(f));
@@ -163,42 +237,6 @@
       const text = (el.textContent || '').trim().toLowerCase();
       const aria = (el.getAttribute('aria-label') || '').toLowerCase();
       return text === 'upload' || text.startsWith('upload') || aria.includes('upload');
-    });
-  }
-
-  function findVideoAiButton() {
-    const candidates = Array.from(document.querySelectorAll(
-      'button, [role="button"], [role="tab"], [role="menuitem"], div[tabindex], div[aria-label], span[aria-label], div, span'
-    ));
-    return candidates.find(el => {
-      if (!isVisible(el)) return false;
-      const aria = (el.getAttribute('aria-label') || '').toLowerCase();
-      const tooltip = (el.getAttribute('data-tooltip') || el.getAttribute('title') || '').toLowerCase();
-      const text = (el.textContent || '').trim().replace(/\s+/g, ' ').toLowerCase();
-
-      if (aria.includes('video ai') || aria.includes('buat klip video ai') || tooltip.includes('video ai')) {
-        return true;
-      }
-      if (text === 'video ai' || text.startsWith('video ai')) {
-        const rect = el.getBoundingClientRect();
-        return rect.width > 0 && rect.width < 250 && rect.height > 0 && rect.height < 250;
-      }
-      return false;
-    });
-  }
-
-  function findVisiblePromptBox() {
-    const inputs = Array.from(document.querySelectorAll(
-      '[role="textbox"], textarea, [contenteditable="true"], input[type="text"]'
-    ));
-    return inputs.find(el => {
-      if (!isVisible(el)) return false;
-      const aria = (el.getAttribute('aria-label') || '').toLowerCase();
-      const placeholder = (el.getAttribute('placeholder') || '').toLowerCase();
-      if (aria.includes('deskripsikan') || aria.includes('prompt') || placeholder.includes('deskripsikan') || placeholder.includes('prompt')) {
-        return true;
-      }
-      return el.getAttribute('role') === 'textbox' || el.hasAttribute('contenteditable');
     });
   }
 
