@@ -195,12 +195,68 @@ let isProcessing = false;
 let activeTaskId = null;
 let resetVersion = 0;
 let logHistory = [];
+let terminalHeartbeatActive = false;
+let terminalHeartbeatTimer = null;
+
+function formatUptime(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  const hrs = Math.floor(mins / 60);
+  if (hrs > 0) return `${hrs}h ${mins % 60}m ${secs}s`;
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+function startTerminalHeartbeat() {
+  if (!process.stdout.isTTY || terminalHeartbeatActive) return;
+  terminalHeartbeatActive = true;
+  const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+  const wave = [
+    '[ ▰▱▱▱▱ ]',
+    '[ ▰▰▱▱▱ ]',
+    '[ ▰▰▰▱▱ ]',
+    '[ ▰▰▰▰▱ ]',
+    '[ ▰▰▰▰▰ ]',
+    '[ ▱▰▰▰▰ ]',
+    '[ ▱▱▰▰▰ ]',
+    '[ ▱▱▱▰▰ ]',
+    '[ ▱▱▱▱▰ ]',
+    '[ ▱▱▱▱▱ ]'
+  ];
+  let step = 0;
+  const startTime = Date.now();
+
+  terminalHeartbeatTimer = setInterval(() => {
+    const f = frames[step % frames.length];
+    const w = wave[step % wave.length];
+    step++;
+
+    const now = Date.now();
+    let onlineExtCount = 0;
+    for (const ext of activeExtensions.values()) {
+      if (now - ext.lastSeen < 10000 && !(ext.cooldownUntil > now)) onlineExtCount++;
+    }
+    const pendingCount = taskQueue.filter(t => t.status.startsWith('Pending') || t.status.startsWith('Processing') || t.status === 'Submitting' || t.status === 'Rendering' || t.status === 'Downloading').length;
+    const uptimeStr = formatUptime(Math.floor((now - startTime) / 1000));
+
+    const statusText = isProcessing ? '\x1b[33m⚡ SIBUK (Proses Task)\x1b[0m' : '\x1b[32m✔ STANDBY\x1b[0m';
+    const line = `\r\x1b[36m${f}\x1b[0m [VIDS GOO] \x1b[35m${w}\x1b[0m ${statusText} \x1b[90m|\x1b[0m Fleet: \x1b[1m${onlineExtCount}\x1b[0m Online \x1b[90m|\x1b[0m Task: \x1b[1m${pendingCount}\x1b[0m \x1b[90m|\x1b[0m Uptime: \x1b[90m${uptimeStr}\x1b[0m `;
+
+    process.stdout.write(line);
+  }, 120);
+
+  if (terminalHeartbeatTimer && typeof terminalHeartbeatTimer.unref === 'function') {
+    terminalHeartbeatTimer.unref();
+  }
+}
 
 function addLog(msg) {
   const timestamp = new Date().toLocaleTimeString();
   const logEntry = `[${timestamp}] ${msg}`;
   logHistory.push(logEntry);
   if (logHistory.length > 100) logHistory.shift();
+  if (terminalHeartbeatActive && process.stdout.isTTY) {
+    process.stdout.write('\r\x1b[K');
+  }
   console.log(logEntry);
 }
 
@@ -498,6 +554,7 @@ async function processNextQueue() {
 function startServer(port = PORT) {
   const server = app.listen(port, '127.0.0.1', () => {
     addLog(`Google Vids Multi-Chrome Manager berjalan di http://127.0.0.1:${port}`);
+    startTerminalHeartbeat();
   });
 
   server.on('error', (err) => {
