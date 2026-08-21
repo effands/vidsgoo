@@ -94,7 +94,9 @@ async function executeTaskOnTab(task) {
       prompt: task.prompt,
       ratio: task.ratio,
       taskId: task.id,
-      folder: task.folder || ''
+      folder: task.folder || '',
+      images: task.images || [],
+      mode: task.mode || 'standard'
     });
   } catch (err) {
     await reportFailure(task.id, `Gagal mengirim automasi ke tab Google Vids: ${err.message}`);

@@ -8,8 +8,8 @@ const { parsePromptBlocks, inspectVideoFile, resolveVideoTarget } = require('./l
 const app = express();
 const PORT = 7890;
 
-app.use(express.json({ strict: false }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb', strict: false }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/downloads', express.static(path.join(__dirname, 'downloads')));
 const chromeDownloadDir = path.join(os.homedir(), 'Downloads', 'Google_Vids');
