@@ -496,7 +496,7 @@ app.post('/api/queue/stop-reset', requireDashboardOrigin, (req, res) => {
 
 // Add Queue Task (Single or Batch Prompts)
 app.post('/api/queue/add', requireDashboardOrigin, (req, res) => {
-  const { prompts, url, ratio, targetChrome, folder } = req.body;
+  const { prompts, url, ratio, targetChrome, folder, images, mode } = req.body;
 
   if (!prompts || !prompts.trim()) {
     return res.status(400).json({ error: 'Prompt tidak boleh kosong' });
@@ -507,6 +507,7 @@ app.post('/api/queue/add', requireDashboardOrigin, (req, res) => {
 
   const promptList = parsePromptBlocks(prompts);
   const sanitizedFolder = String(folder || '').replace(/[<>:"/\\|?*\x00-\x1F]/g, '').trim();
+  const safeImages = Array.isArray(images) ? images.slice(0, 10) : [];
   
   promptList.forEach((pText, index) => {
     taskQueue.push({
@@ -516,6 +517,8 @@ app.post('/api/queue/add', requireDashboardOrigin, (req, res) => {
       ratio: ratio || '16:9',
       targetChrome: targetChrome || 'auto',
       folder: sanitizedFolder,
+      images: safeImages,
+      mode: mode || 'standard',
       status: 'Pending',
       createdAt: new Date().toLocaleTimeString(),
       createdTimestamp: Date.now()
@@ -523,7 +526,9 @@ app.post('/api/queue/add', requireDashboardOrigin, (req, res) => {
   });
 
   const folderLog = sanitizedFolder ? ` | Folder "${sanitizedFolder}"` : '';
-  addLog(`📥 Batch diterima | ${promptList.length} task | Rasio ${ratio || '16:9'} | Target ${targetChrome || 'auto'}${folderLog}`);
+  const modeLog = mode === 'affiliate' ? ' | 🛍️ Mode Affiliate' : '';
+  const imageLog = safeImages.length > 0 ? ` | ${safeImages.length} Media` : '';
+  addLog(`📥 Batch diterima | ${promptList.length} task | Rasio ${ratio || '16:9'} | Target ${targetChrome || 'auto'}${folderLog}${modeLog}${imageLog}`);
   
   processNextQueue();
 

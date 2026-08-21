@@ -349,6 +349,175 @@
       align-items: start;
     }
 
+    .affiliate-grid {
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    /* Media Uploader Slots */
+    .media-slot-card {
+      background: var(--bg-inset);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .media-slot-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .media-slot-title {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .dropzone-box {
+      border: 2px dashed var(--border-strong);
+      border-radius: 8px;
+      padding: 18px 14px;
+      text-align: center;
+      background: var(--bg-surface);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dropzone-box:hover {
+      border-color: var(--accent-text);
+      background: var(--bg-surface-hover);
+    }
+
+    .dropzone-icon {
+      font-size: 1.5rem;
+    }
+
+    .dropzone-text {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .dropzone-sub {
+      font-size: 0.725rem;
+      color: var(--text-secondary);
+    }
+
+    .media-preview-container {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      background: #000;
+    }
+
+    .media-preview-img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .media-badge-tag {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      background: rgba(11, 15, 23, 0.85);
+      border: 1px solid var(--border-strong);
+      color: #38bdf8;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.725rem;
+      font-weight: 700;
+      backdrop-filter: blur(4px);
+    }
+
+    .media-remove-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(239, 68, 68, 0.9);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      transition: transform 0.1s ease, background-color 0.15s ease;
+    }
+
+    .media-remove-btn:hover {
+      background: #dc2626;
+      transform: scale(1.1);
+    }
+
+    .product-thumbs-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .product-thumb-item {
+      position: relative;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      background: #000;
+      height: 110px;
+    }
+
+    .product-thumb-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .quick-tag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background: var(--bg-inset);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      color: var(--accent-text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .quick-tag-pill:hover {
+      border-color: var(--status-info-border);
+      background: var(--accent-tint);
+    }
+
+    .tag-inserters-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+
     .chrome-fleet-list {
       display: flex;
       flex-direction: column;
@@ -1018,7 +1187,7 @@
     }
 
     @media (max-width: 1024px) {
-      .composer-grid {
+      .composer-grid, .affiliate-grid {
         grid-template-columns: 1fr;
       }
       body {
@@ -1056,6 +1225,9 @@
         grid-column: 1 / -1;
       }
       .dialog-actions {
+        grid-template-columns: 1fr;
+      }
+      .product-thumbs-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -1116,6 +1288,9 @@
     <button class="nav-tab-btn active" role="tab" aria-selected="true" aria-controls="pane-composer" id="tab-composer" data-tab="composer">
       <span>✨ Buat Video</span>
     </button>
+    <button class="nav-tab-btn" role="tab" aria-selected="false" aria-controls="pane-affiliate" id="tab-affiliate" data-tab="affiliate">
+      <span>🛍️ Video Affiliate</span>
+    </button>
     <button class="nav-tab-btn" role="tab" aria-selected="false" aria-controls="pane-queue" id="tab-queue" data-tab="queue">
       <span>📋 Antrean Task</span>
       <span id="navQueueBadge" class="tab-counter">0</span>
@@ -1133,7 +1308,7 @@
     </button>
   </nav>
 
-  <!-- TAB 1: Task Composer -->
+  <!-- TAB 1: General Task Composer -->
   <section id="pane-composer" class="tab-pane active" role="tabpanel" aria-labelledby="tab-composer">
     <div class="composer-grid">
       <!-- Main Form Card -->
@@ -1228,7 +1403,177 @@
     </div>
   </section>
 
-  <!-- TAB 2: Queue Matrix -->
+  <!-- TAB 2: Affiliate Video UGC Studio (NEW) -->
+  <section id="pane-affiliate" class="tab-pane" role="tabpanel" aria-labelledby="tab-affiliate">
+    <div class="affiliate-grid">
+      <!-- Media Slot Manager (Avatar + Products) -->
+      <div>
+        <!-- Slot 1: Foto Avatar / Kreator -->
+        <div class="studio-card">
+          <div class="card-header">
+            <h2>
+              <span>1. Foto Avatar / Model UGC</span>
+            </h2>
+            <span class="badge badge-info">@Gambar1</span>
+          </div>
+          <div class="card-body">
+            <input type="file" id="affAvatarInput" accept="image/*" style="display: none;">
+            
+            <div id="affAvatarDropzone" class="dropzone-box" onclick="document.getElementById('affAvatarInput').click()">
+              <div class="dropzone-icon">👤</div>
+              <div class="dropzone-text">Pilih Foto Avatar Kreator</div>
+              <div class="dropzone-sub">PNG, JPG, WebP (Maks 10MB)</div>
+            </div>
+
+            <div id="affAvatarPreviewWrap" style="display: none; margin-top: 12px;">
+              <div class="media-preview-container">
+                <img id="affAvatarImg" class="media-preview-img" alt="Avatar Preview">
+                <span class="media-badge-tag">@Gambar1 (Avatar)</span>
+                <button type="button" class="media-remove-btn" onclick="removeAffAvatar()" title="Hapus Avatar">✕</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slot 2+: Foto Detail Produk -->
+        <div class="studio-card">
+          <div class="card-header">
+            <h2>
+              <span>2. Foto Produk &amp; Detail</span>
+            </h2>
+            <span class="badge badge-info" id="affProductCountBadge">0 Produk</span>
+          </div>
+          <div class="card-body">
+            <input type="file" id="affProductInput" accept="image/*" multiple style="display: none;">
+            
+            <div id="affProductDropzone" class="dropzone-box" onclick="document.getElementById('affProductInput').click()">
+              <div class="dropzone-icon">📦</div>
+              <div class="dropzone-text">+ Tambah Foto Produk / Angle</div>
+              <div class="dropzone-sub">Bisa pilih 1 atau beberapa foto produk sekaligus</div>
+            </div>
+
+            <div id="affProductThumbsGrid" class="product-thumbs-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Smart Script Builder & Batch Generator -->
+      <div>
+        <div class="studio-card">
+          <div class="card-header">
+            <h2>
+              <span>Smart Affiliate Prompt Builder</span>
+            </h2>
+            <span class="badge badge-success">AI Copywriter</span>
+          </div>
+          <div class="card-body">
+            <!-- Product Parameters Form -->
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; margin-bottom: 14px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="affProductName">Nama Produk Affiliate</label>
+                <input type="text" id="affProductName" placeholder="Contoh: TWS Wireless Earphone ANC Pro" oninput="syncAffFolder()">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="affStyle">Gaya Promosi / Tone of Voice</label>
+                <select id="affStyle">
+                  <option value="ugc_viral">UGC Kasual &amp; Antusias (Gaya TikTok Viral)</option>
+                  <option value="honest_review">Review Jujur &amp; Storytelling Pengalaman Pakai</option>
+                  <option value="flash_sale">Flash Sale &amp; Promo Diskon Kilat (Mendesak)</option>
+                  <option value="problem_solution">Problem &amp; Solution (Masalah ke Solusi)</option>
+                  <option value="aesthetic">Aesthetic Showcase &amp; Clean Showcase</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="affProductUsp">Poin Keunggulan / Fitur Utama Produk</label>
+              <input type="text" id="affProductUsp" placeholder="Contoh: Bass jernih, noise cancelling aktif, baterai 40 jam, diskon 50% hari ini">
+            </div>
+
+            <div style="display: grid; grid-template-columns: minmax(0, 1.4fr) 140px; gap: 14px; margin-bottom: 16px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="affCta">Call To Action (CTA)</label>
+                <input type="text" id="affCta" value="Langsung klik keranjang kuning di bawah sekarang sebelum kehabisan!">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="affVariationCount">Jumlah Variasi</label>
+                <select id="affVariationCount">
+                  <option value="1">1 Video</option>
+                  <option value="3" selected>3 Variasi Video</option>
+                  <option value="5">5 Variasi Video</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="button" id="generateAffScriptBtn" class="btn btn-secondary btn-full" style="margin-bottom: 20px;">
+              ✨ Susun Prompt Affiliate Otomatis (@Gambar1 &amp; @Gambar2)
+            </button>
+
+            <!-- Tag Insert Shortcuts -->
+            <div class="tag-inserters-row">
+              <span style="font-size: 0.775rem; font-weight: 700; color: var(--text-secondary);">Sisipkan Tag Cepat:</span>
+              <button type="button" class="quick-tag-pill" onclick="insertAffTag('@Gambar1')">+ @Gambar1 (Avatar)</button>
+              <button type="button" class="quick-tag-pill" onclick="insertAffTag('@Gambar2')">+ @Gambar2 (Produk Utama)</button>
+              <button type="button" class="quick-tag-pill" onclick="insertAffTag('@Gambar3')">+ @Gambar3 (Detail 1)</button>
+              <button type="button" class="quick-tag-pill" onclick="insertAffTag('@Gambar4')">+ @Gambar4 (Detail 2)</button>
+            </div>
+
+            <!-- Batch Prompts Editor -->
+            <form id="affiliateBatchForm">
+              <div class="form-group">
+                <label for="affPrompts">Prompt Video Affiliate (Batch)</label>
+                <div class="prompt-composer-shell">
+                  <textarea id="affPrompts" placeholder="@Gambar1 memegang dan mereview produk @Gambar2 dengan antusias, menjelaskan keunggulan suara jernih dan noise cancelling dalam bahasa indonesia kasual.&#10;&#10;@Gambar1 menunjukkan detail @Gambar2 sambil tersenyum ke kamera, mengajak penonton checkout di keranjang kuning." required></textarea>
+                  <aside class="prompt-syntax-guide">
+                    <div>
+                      <strong>Aturan 1 Blok = 1 Video</strong>
+                      Gunakan tag <kbd>@Gambar1</kbd> untuk Avatar dan <kbd>@Gambar2</kbd> untuk Produk. Pisahkan antar video dengan:
+                    </div>
+                    <div style="margin-top: 10px;">
+                      <kbd>Enter</kbd> + <kbd>Enter</kbd>
+                    </div>
+                  </aside>
+                </div>
+              </div>
+
+              <!-- Execution Settings -->
+              <div class="batch-options-grid" style="margin-top: 16px;">
+                <div class="form-group">
+                  <label for="affRatio">Rasio Aspek Video</label>
+                  <select id="affRatio">
+                    <option value="9:16" selected>9:16 (Potret TikTok / Reels / Shorts)</option>
+                    <option value="16:9">16:9 (Lanskap)</option>
+                    <option value="1:1">1:1 (Persegi)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="affFolder">Folder Sub-Folder Download</label>
+                  <input type="text" id="affFolder" placeholder="Contoh: Affiliate_EarphoneANC">
+                </div>
+                <div class="form-group">
+                  <label for="affTargetChrome">Pilih Eksekutor Chrome</label>
+                  <select id="affTargetChrome">
+                    <option value="auto">Auto Switch (Pilih Chrome Online Secara Otomatis)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="margin-top: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                <button type="submit" class="btn btn-primary" style="min-width: 260px;">
+                  🚀 Masukkan Batch Affiliate ke Antrean
+                </button>
+                <span style="font-size: 0.8125rem; color: var(--text-secondary);">
+                  Otomatis dieksekusi dengan referensi Avatar &amp; detail foto produk.
+                </span>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 3: Queue Matrix -->
   <section id="pane-queue" class="tab-pane" role="tabpanel" aria-labelledby="tab-queue">
     <div class="studio-card">
       <div class="card-header">
@@ -1270,7 +1615,7 @@
     </div>
   </section>
 
-  <!-- TAB 3: Video Gallery with Category Filtering -->
+  <!-- TAB 4: Video Gallery with Category Filtering -->
   <section id="pane-gallery" class="tab-pane" role="tabpanel" aria-labelledby="tab-gallery">
     <div class="studio-card">
       <div class="card-header">
@@ -1305,7 +1650,7 @@
     </div>
   </section>
 
-  <!-- TAB 4: Live Observability Logs -->
+  <!-- TAB 5: Live Observability Logs -->
   <section id="pane-logs" class="tab-pane" role="tabpanel" aria-labelledby="tab-logs">
     <div class="studio-card">
       <div class="card-header">
@@ -1322,7 +1667,7 @@
     </div>
   </section>
 
-  <!-- TAB 5: Chrome Fleet Management -->
+  <!-- TAB 6: Chrome Fleet Management -->
   <section id="pane-fleet" class="tab-pane" role="tabpanel" aria-labelledby="tab-fleet">
     <div class="composer-grid">
       <div class="studio-card">
@@ -1342,7 +1687,7 @@
           <h2>Petunjuk Koneksi</h2>
         </div>
         <div class="card-body" style="font-size: 0.84375rem; color: var(--text-secondary); line-height: 1.6;">
-          <p>Setiap browser Chrome yang terpasang <strong>Google Vids AI Helper Extension</strong> akan langsung terdeteksi otomatis.</p>
+          <p>Setiap browser Chrome yang terpasang <strong>VIDS GOO AI Helper Extension</strong> akan langsung terdeteksi otomatis.</p>
           <div class="info-callout" style="margin-top: 14px;">
             Pastikan tab <code>https://docs.google.com/videos</code> terbuka di masing-masing jendela Chrome agar prompt siap dieksekusi.
           </div>
@@ -1401,7 +1746,7 @@
 
   // Restore active tab from URL hash if available
   const initialHash = typeof window !== 'undefined' && window.location?.hash ? window.location.hash.replace('#', '') : '';
-  if (initialHash && ['composer', 'queue', 'gallery', 'logs', 'fleet'].includes(initialHash)) {
+  if (initialHash && ['composer', 'affiliate', 'queue', 'gallery', 'logs', 'fleet'].includes(initialHash)) {
     switchTab(initialHash);
   }
 
@@ -1414,15 +1759,18 @@
   document.documentElement.setAttribute('data-theme', currentTheme);
   updateThemeUI(currentTheme);
 
-  themeToggle.addEventListener('click', () => {
-    const activeTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = activeTheme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    updateThemeUI(newTheme);
-  });
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const activeTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = activeTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeUI(newTheme);
+    });
+  }
 
   function updateThemeUI(theme) {
+    if (!themeIcon || !themeText) return;
     if (theme === 'dark') {
       themeIcon.textContent = '🌙';
       themeText.textContent = 'Tema Gelap';
@@ -1448,6 +1796,7 @@
 
   function showToast(message, icon = '✓') {
     const container = document.getElementById('toastContainer');
+    if (!container) return;
     const toast = document.createElement('div');
     toast.className = 'toast';
     const iconSpan = document.createElement('span');
@@ -1468,6 +1817,7 @@
     const messageNode = document.getElementById('confirmMessage');
     const cancelButton = document.getElementById('confirmCancel');
     const acceptButton = document.getElementById('confirmAccept');
+    if (!dialog || !titleNode || !messageNode || !cancelButton || !acceptButton) return Promise.resolve(true);
     titleNode.textContent = title;
     messageNode.textContent = message;
     dialog.classList.add('is-open');
@@ -1492,6 +1842,241 @@
     });
   }
 
+  /* ==========================================================================
+     Affiliate Media Management State (Avatar & Product Thumbs)
+     ========================================================================== */
+  let affAvatarData = null; // { name, dataUrl }
+  let affProductDataList = []; // [ { name, dataUrl }, ... ]
+
+  const affAvatarInput = document.getElementById('affAvatarInput');
+  const affProductInput = document.getElementById('affProductInput');
+
+  if (affAvatarInput) {
+    affAvatarInput.addEventListener('change', event => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        affAvatarData = { name: file.name, dataUrl: e.target.result };
+        renderAffAvatar();
+        showToast('Foto Avatar berhasil dimuat!', '👤');
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderAffAvatar() {
+    const dropzone = document.getElementById('affAvatarDropzone');
+    const previewWrap = document.getElementById('affAvatarPreviewWrap');
+    const imgNode = document.getElementById('affAvatarImg');
+    if (!dropzone || !previewWrap || !imgNode) return;
+
+    if (affAvatarData) {
+      dropzone.style.display = 'none';
+      previewWrap.style.display = 'block';
+      imgNode.src = affAvatarData.dataUrl;
+    } else {
+      dropzone.style.display = 'flex';
+      previewWrap.style.display = 'none';
+      imgNode.src = '';
+    }
+  }
+
+  window.removeAffAvatar = function() {
+    affAvatarData = null;
+    if (affAvatarInput) affAvatarInput.value = '';
+    renderAffAvatar();
+  };
+
+  if (affProductInput) {
+    affProductInput.addEventListener('change', event => {
+      const files = Array.from(event.target.files || []);
+      if (!files.length) return;
+
+      let remaining = files.length;
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          affProductDataList.push({ name: file.name, dataUrl: e.target.result });
+          remaining--;
+          if (remaining === 0) {
+            renderAffProducts();
+            showToast(`${files.length} Foto Produk ditambahkan!`, '📦');
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+      affProductInput.value = '';
+    });
+  }
+
+  function renderAffProducts() {
+    const grid = document.getElementById('affProductThumbsGrid');
+    const countBadge = document.getElementById('affProductCountBadge');
+    if (!grid) return;
+
+    if (countBadge) {
+      countBadge.textContent = `${affProductDataList.length} Produk`;
+    }
+
+    if (!affProductDataList.length) {
+      grid.innerHTML = '';
+      return;
+    }
+
+    grid.innerHTML = affProductDataList.map((item, idx) => {
+      const tagIndex = idx + 2; // Avatar is Gambar1, Products start at Gambar2
+      return `
+        <div class="product-thumb-item">
+          <img src="${item.dataUrl}" alt="Produk ${tagIndex}">
+          <span class="media-badge-tag">@Gambar${tagIndex}</span>
+          <button type="button" class="media-remove-btn" onclick="removeAffProduct(${idx})" title="Hapus Foto">✕</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  window.removeAffProduct = function(index) {
+    affProductDataList.splice(index, 1);
+    renderAffProducts();
+  };
+
+  window.syncAffFolder = function() {
+    const name = document.getElementById('affProductName')?.value || '';
+    const folderInput = document.getElementById('affFolder');
+    if (folderInput && name.trim()) {
+      const cleanName = name.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').slice(0, 30);
+      folderInput.value = `Affiliate_${cleanName}`;
+    }
+  };
+
+  window.insertAffTag = function(tag) {
+    const textarea = document.getElementById('affPrompts');
+    if (!textarea) return;
+    const start = textarea.selectionStart || 0;
+    const end = textarea.selectionEnd || 0;
+    const text = textarea.value;
+    textarea.value = text.slice(0, start) + tag + ' ' + text.slice(end);
+    textarea.focus();
+    textarea.selectionStart = textarea.selectionEnd = start + tag.length + 1;
+  };
+
+  // Smart Copywriting Generator for Affiliate Prompts
+  const generateAffScriptBtn = document.getElementById('generateAffScriptBtn');
+  if (generateAffScriptBtn) {
+    generateAffScriptBtn.addEventListener('click', () => {
+      const prodName = document.getElementById('affProductName')?.value?.trim() || 'Produk Unggulan';
+      const usp = document.getElementById('affProductUsp')?.value?.trim() || 'kualitas terbaik dan desain modern';
+      const cta = document.getElementById('affCta')?.value?.trim() || 'Langsung klik keranjang kuning sekarang!';
+      const style = document.getElementById('affStyle')?.value || 'ugc_viral';
+      const count = parseInt(document.getElementById('affVariationCount')?.value || '3', 10);
+
+      const templates = {
+        ugc_viral: [
+          `@Gambar1 mereview @Gambar2 dengan ekspresi kaget dan antusias, memperlihatkan produk ke kamera lalu menjelaskan keunggulan ${usp}. Nada bicara kasual santai ala kreator TikTok viral. Di akhir, @Gambar1 menunjuk ke bawah sambil mengingatkan "${cta}".`,
+          `@Gambar1 membuka unboxing @Gambar2 dengan penuh semangat, mencoba langsung fiturnya yang ${usp}, lalu memberikan senyuman puas ke kamera. Bahasa kasual ramah, mengajak audiens "${cta}".`,
+          `Kamera menyorot @Gambar1 yang sedang beraktivitas lalu memakai @Gambar2. @Gambar1 menjelaskan betapa terbantunya setelah pakai produk ini karena ${usp}. Diakhiri ajakan "${cta}".`,
+          `@Gambar1 membandingkan pengalaman sebelum dan sesudah memiliki @Gambar2. Menunjukkan keunggulan ${usp} secara detail dan meyakinkan. Bahasa santai, call to action "${cta}".`,
+          `@Gambar1 tersenyum membawa @Gambar2, merekomendasikan produk ini sebagai barang wajib punya karena ${usp}. Kamera zoom in produk dengan sinematik, ditutup ajakan "${cta}".`
+        ],
+        honest_review: [
+          `@Gambar1 memberikan review jujur tentang ${prodName} @Gambar2 setelah pemakaian rutin, menjelaskan detail fitur ${usp} secara mendalam dan terpercaya. Video diakhiri dengan rekomendasi tulus "${cta}".`,
+          `@Gambar1 duduk santai di depan kamera memegang @Gambar2, menceritakan pengalaman pribadi yang puas dengan ${usp}. Nada bicara bersahabat dan meyakinkan penonton untuk "${cta}".`,
+          `@Gambar1 mendemonstrasikan cara kerja ${prodName} @Gambar2 secara step-by-step, menekankan kelebihan ${usp}. Visual bersih profesional, diakhiri ajakan "${cta}".`,
+          `@Gambar1 menyorot detail fisik @Gambar2 sambil menjelaskan nilai guna dan keunggulan ${usp}. Gaya review objektif dan jelas, ditutup call to action "${cta}".`,
+          `@Gambar1 membagikan tips penggunaan optimal ${prodName} @Gambar2 dengan menonjolkan fitur ${usp}. Nada bicara informatif dan ramah, mengajak audiens "${cta}".`
+        ],
+        flash_sale: [
+          `@Gambar1 memperlihatkan ${prodName} @Gambar2 dengan gestur mendesak dan heboh, mengumumkan diskon spesial karena produk memiliki ${usp}. Nada cepat penuh energi, mengajak "${cta}".`,
+          `@Gambar1 memegang @Gambar2 sambil mengingatkan promo terbatas hari ini untuk produk dengan kelebihan ${usp}. Visual dinamis bergerak cepat, diakhiri seruan "${cta}".`,
+          `@Gambar1 merekomendasikan penawaran harga terbaik untuk ${prodName} @Gambar2, menonjolkan ${usp} yang tidak boleh dilewatkan. Nada antusias, langsung ajak "${cta}".`,
+          `@Gambar1 memberikan peringatan stok menipis untuk ${prodName} @Gambar2, menjelaskan ${usp} yang membuatnya cepat habis. Ajakan tegas "${cta}".`,
+          `@Gambar1 menunjukkan bukti kepuasan memiliki ${prodName} @Gambar2 dan menyuruh penonton segera checkout promo ${usp}. Seruan mendesak "${cta}".`
+        ],
+        problem_solution: [
+          `@Gambar1 mengawali video dengan membahas masalah umum sehari-hari, lalu memperkenalkan ${prodName} @Gambar2 sebagai solusi tepat karena ${usp}. Diakhiri ajakan solusi "${cta}".`,
+          `@Gambar1 memperlihatkan rasa frustasi terhadap masalah lama, lalu tersenyum lega setelah menemukan @Gambar2 dengan keunggulan ${usp}. Nada solutif bersahabat, ditutup "${cta}".`,
+          `@Gambar1 membagikan cerita singkat kenapa dulu sering salah pilih, sampai akhirnya beralih ke ${prodName} @Gambar2 yang ${usp}. Ajakan meyakinkan "${cta}".`,
+          `@Gambar1 membedah alasan kenapa penonton butuh @Gambar2 sekarang juga untuk mengatasi kendala, berkat fitur ${usp}. Nada informatif mengedukasi, diakhiri "${cta}".`,
+          `@Gambar1 mendemonstrasikan transformasi hasil nyata memakai ${prodName} @Gambar2 dengan ${usp}. Gaya narasi inspiratif, mengajak penonton "${cta}".`
+        ],
+        aesthetic: [
+          `Visual sinematik halus menampilkan @Gambar1 dan keindahan desain @Gambar2 dengan pencahayaan hangat dan estetik, menonjolkan detail ${usp}. Musik lembut, diakhiri teks ajakan "${cta}".`,
+          `@Gambar1 memegang ${prodName} @Gambar2 dalam suasana modern minimalis, gerakan kamera smooth menyorot ${usp}. Visual elegan berkelas, diakhiri ajakan halus "${cta}".`,
+          `Kamera macro bergeser menampilkan tekstur dan detail ${prodName} @Gambar2 saat digunakan oleh @Gambar1, menonjolkan ${usp}. Nuansa premium, ditutup call to action "${cta}".`,
+          `@Gambar1 menampilkan rutinitas harian yang estetik ditemani @Gambar2, memperlihatkan kemudahan dari ${usp}. Suasana menenangkan dan meyakinkan audiens "${cta}".`,
+          `Showcase produk sinematik 9:16 yang memadukan ekspresi elegan @Gambar1 dan fitur unggulan @Gambar2 (${usp}). Visual memukau, diakhiri pesan "${cta}".`
+        ]
+      };
+
+      const selectedList = templates[style] || templates.ugc_viral;
+      const prompts = selectedList.slice(0, count).join('\n\n');
+      
+      const promptsTextarea = document.getElementById('affPrompts');
+      if (promptsTextarea) {
+        promptsTextarea.value = prompts;
+        showToast(`${count} Prompt Affiliate berhasil disusun!`, '✨');
+      }
+    });
+  }
+
+  // Affiliate Form Submit
+  const affForm = document.getElementById('affiliateBatchForm');
+  if (affForm) {
+    affForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const prompts = document.getElementById('affPrompts')?.value || '';
+      const ratio = document.getElementById('affRatio')?.value || '9:16';
+      const folder = document.getElementById('affFolder')?.value || 'Affiliate_General';
+      const targetChrome = document.getElementById('affTargetChrome')?.value || 'auto';
+
+      if (!prompts.trim()) {
+        showToast('Prompt video affiliate tidak boleh kosong.', '⚠️');
+        return;
+      }
+
+      // Collect media assets
+      const images = [];
+      if (affAvatarData) {
+        images.push({ type: 'avatar', tag: '@Gambar1', name: affAvatarData.name, dataUrl: affAvatarData.dataUrl });
+      }
+      affProductDataList.forEach((prod, idx) => {
+        images.push({ type: 'product', tag: `@Gambar${idx + 2}`, name: prod.name, dataUrl: prod.dataUrl });
+      });
+
+      const payload = {
+        mode: 'affiliate',
+        prompts,
+        ratio,
+        folder,
+        targetChrome,
+        images
+      };
+
+      try {
+        const res = await fetch('/api/queue/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Berhasil memasukkan ${data.count} task affiliate ke antrean!`, '🚀');
+          fetchStatus();
+          switchTab('queue');
+        } else {
+          showToast(data.error || 'Gagal memasukkan task affiliate.', '⚠️');
+        }
+      } catch (err) {
+        showToast('Gagal terhubung ke server.', '⚠️');
+      }
+    });
+  }
+
+  /* ==========================================================================
+     Standard General Queue & Fleet Management
+     ========================================================================== */
   let currentQueueData = [];
   let currentGalleryData = [];
   let selectedCategory = 'ALL';
@@ -1506,13 +2091,15 @@
       const quickFleetList = document.getElementById('quickFleetList');
       const chromeFleetList = document.getElementById('chromeFleetList');
       const targetChromeSelect = document.getElementById('targetChrome');
+      const affTargetChromeSelect = document.getElementById('affTargetChrome');
       const topOnlineBadge = document.getElementById('topOnlineBadge');
       const navFleetBadge = document.getElementById('navFleetBadge');
       const chromeFleetCountBadge = document.getElementById('chromeFleetCountBadge');
       
       if (quickFleetList) quickFleetList.innerHTML = '';
       if (chromeFleetList) chromeFleetList.innerHTML = '';
-      targetChromeSelect.innerHTML = '<option value="auto">Auto Switch (Pilih Chrome Online Secara Otomatis)</option>';
+      if (targetChromeSelect) targetChromeSelect.innerHTML = '<option value="auto">Auto Switch (Pilih Chrome Online Secara Otomatis)</option>';
+      if (affTargetChromeSelect) affTargetChromeSelect.innerHTML = '<option value="auto">Auto Switch (Pilih Chrome Online Secara Otomatis)</option>';
 
       let onlineCount = 0;
 
@@ -1548,10 +2135,15 @@
           }
 
           if (isOnline) {
-            const opt = document.createElement('option');
-            opt.value = c.id || c.port;
-            opt.textContent = `Standby: ${c.name}`;
-            targetChromeSelect.appendChild(opt);
+            const opt1 = document.createElement('option');
+            opt1.value = c.id || c.port;
+            opt1.textContent = `Standby: ${c.name}`;
+            if (targetChromeSelect) targetChromeSelect.appendChild(opt1);
+
+            const opt2 = document.createElement('option');
+            opt2.value = c.id || c.port;
+            opt2.textContent = `Standby: ${c.name}`;
+            if (affTargetChromeSelect) affTargetChromeSelect.appendChild(opt2);
           }
         });
       }
@@ -1577,6 +2169,7 @@
 
   function renderLogs(logs) {
     const logBox = document.getElementById('logBox');
+    if (!logBox) return;
     logBox.textContent = '';
     if (!logs || !logs.length) {
       const empty = document.createElement('div');
@@ -1650,10 +2243,23 @@
   window.reusePrompt = function(id) {
     const task = currentQueueData.find(t => t.id === id);
     if (task) {
-      document.getElementById('prompts').value = task.prompt;
-      if (task.ratio) document.getElementById('ratio').value = task.ratio;
-      if (task.folder) document.getElementById('folder').value = task.folder;
-      switchTab('composer');
+      if (task.mode === 'affiliate') {
+        const affPrompts = document.getElementById('affPrompts');
+        const affRatio = document.getElementById('affRatio');
+        const affFolder = document.getElementById('affFolder');
+        if (affPrompts) affPrompts.value = task.prompt;
+        if (affRatio && task.ratio) affRatio.value = task.ratio;
+        if (affFolder && task.folder) affFolder.value = task.folder;
+        switchTab('affiliate');
+      } else {
+        const genPrompts = document.getElementById('prompts');
+        const genRatio = document.getElementById('ratio');
+        const genFolder = document.getElementById('folder');
+        if (genPrompts) genPrompts.value = task.prompt;
+        if (genRatio && task.ratio) genRatio.value = task.ratio;
+        if (genFolder && task.folder) genFolder.value = task.folder;
+        switchTab('composer');
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' });
       showToast('Prompt dimuat ke kolom input.', '↺');
     }
@@ -1676,25 +2282,29 @@
       if (navQueueBadge) navQueueBadge.textContent = count;
 
       const tbody = document.getElementById('queueTable');
-      if (count === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="table-empty-row">Belum ada task dalam antrean.</td></tr>';
-      } else {
-        tbody.innerHTML = data.queue.map((t, idx) => `
-          <tr>
-            <td><strong>${idx + 1}</strong></td>
-            <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(t.prompt)}">${escapeHtml(t.prompt)}</td>
-            <td><span class="badge badge-folder">📁 ${escapeHtml(t.folder || 'Umum')}</span></td>
-            <td><span class="badge badge-info">${escapeHtml(t.ratio)}</span></td>
-            <td class="status-${escapeHtml(String(t.status ?? '').split(' ')[0])}">${escapeHtml(t.status)}</td>
-            <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-secondary);">${escapeHtml(t.createdAt)}</td>
-            <td style="text-align: right;">
-              <div class="action-group" style="justify-content: flex-end;">
-                <button data-task-action="copy" data-task-id="${encodeURIComponent(String(t.id ?? ''))}" class="btn btn-sm btn-secondary" type="button" title="Salin Prompt">Salin</button>
-                <button data-task-action="reuse" data-task-id="${encodeURIComponent(String(t.id ?? ''))}" class="btn btn-sm btn-primary" type="button" title="Gunakan Lagi">Pakai Lagi</button>
-              </div>
-            </td>
-          </tr>
-        `).join('');
+      if (tbody) {
+        if (count === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="table-empty-row">Belum ada task dalam antrean.</td></tr>';
+        } else {
+          tbody.innerHTML = data.queue.map((t, idx) => `
+            <tr>
+              <td><strong>${idx + 1}</strong></td>
+              <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(t.prompt)}">
+                ${t.mode === 'affiliate' ? '<span class="badge badge-info" style="margin-right: 6px; font-size: 0.6875rem;">🛍️ Affiliate</span>' : ''}${escapeHtml(t.prompt)}
+              </td>
+              <td><span class="badge badge-folder">📁 ${escapeHtml(t.folder || 'Umum')}</span></td>
+              <td><span class="badge badge-info">${escapeHtml(t.ratio)}</span></td>
+              <td class="status-${escapeHtml(String(t.status ?? '').split(' ')[0])}">${escapeHtml(t.status)}</td>
+              <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-secondary);">${escapeHtml(t.createdAt)}</td>
+              <td style="text-align: right;">
+                <div class="action-group" style="justify-content: flex-end;">
+                  <button data-task-action="copy" data-task-id="${encodeURIComponent(String(t.id ?? ''))}" class="btn btn-sm btn-secondary" type="button" title="Salin Prompt">Salin</button>
+                  <button data-task-action="reuse" data-task-id="${encodeURIComponent(String(t.id ?? ''))}" class="btn btn-sm btn-primary" type="button" title="Gunakan Lagi">Pakai Lagi</button>
+                </div>
+              </td>
+            </tr>
+          `).join('');
+        }
       }
 
       renderLogs(data.logs || []);
@@ -1703,58 +2313,70 @@
     }
   }
 
-  document.getElementById('queueTable').addEventListener('click', event => {
-    const button = event.target.closest('[data-task-action]');
-    if (!button) return;
-    const taskId = decodeURIComponent(button.dataset.taskId);
-    if (button.dataset.taskAction === 'copy') window.copyPrompt(taskId);
-    if (button.dataset.taskAction === 'reuse') window.reusePrompt(taskId);
-  });
-
-  document.getElementById('queueForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const payload = {
-      url: document.getElementById('targetUrl').value,
-      ratio: document.getElementById('ratio').value,
-      folder: document.getElementById('folder').value,
-      targetChrome: document.getElementById('targetChrome').value,
-      prompts: document.getElementById('prompts').value
-    };
-
-    const res = await fetch('/api/queue/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+  const queueTable = document.getElementById('queueTable');
+  if (queueTable) {
+    queueTable.addEventListener('click', event => {
+      const button = event.target.closest('[data-task-action]');
+      if (!button) return;
+      const taskId = decodeURIComponent(button.dataset.taskId);
+      if (button.dataset.taskAction === 'copy') window.copyPrompt(taskId);
+      if (button.dataset.taskAction === 'reuse') window.reusePrompt(taskId);
     });
+  }
 
-    const data = await res.json();
-    if (data.success) {
-      document.getElementById('prompts').value = '';
-      showToast('Batch task berhasil dimasukkan ke antrean!', '✓');
-      fetchStatus();
-      switchTab('queue');
-    }
-  });
+  const queueForm = document.getElementById('queueForm');
+  if (queueForm) {
+    queueForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        url: document.getElementById('targetUrl')?.value || '',
+        ratio: document.getElementById('ratio')?.value || '16:9',
+        folder: document.getElementById('folder')?.value || '',
+        targetChrome: document.getElementById('targetChrome')?.value || 'auto',
+        prompts: document.getElementById('prompts')?.value || ''
+      };
 
-  document.getElementById('clearQueueBtn').addEventListener('click', async () => {
-    if (await showConfirm('Semua task dalam antrean akan dihapus secara permanen.', 'Kosongkan antrean?')) {
-      await fetch('/api/queue/clear', { method: 'DELETE' });
-      fetchStatus();
-      showToast('Antrean sudah dikosongkan.', '✓');
-    }
-  });
+      const res = await fetch('/api/queue/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-  document.getElementById('stopResetBtn').addEventListener('click', async () => {
-    if (!await showConfirm('Semua proses aktif dan task menunggu akan dibatalkan. Antrean dapat langsung digunakan kembali.', 'Stop dan reset semua proses?')) return;
-    const res = await fetch('/api/queue/stop-reset', {
-      method: 'POST',
-      headers: { 'X-Dashboard-Request': 'Google-Vids-Dashboard' }
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('prompts').value = '';
+        showToast('Batch task berhasil dimasukkan ke antrean!', '✓');
+        fetchStatus();
+        switchTab('queue');
+      }
     });
-    const data = await res.json();
-    if (!res.ok) return showToast(data.error || 'Gagal menghentikan proses.', '⚠️');
-    showToast(`${data.cancelled} task berhasil dibatalkan.`, '⏹');
-    fetchStatus();
-  });
+  }
+
+  const clearQueueBtn = document.getElementById('clearQueueBtn');
+  if (clearQueueBtn) {
+    clearQueueBtn.addEventListener('click', async () => {
+      if (await showConfirm('Semua task dalam antrean akan dihapus secara permanen.', 'Kosongkan antrean?')) {
+        await fetch('/api/queue/clear', { method: 'DELETE' });
+        fetchStatus();
+        showToast('Antrean sudah dikosongkan.', '✓');
+      }
+    });
+  }
+
+  const stopResetBtn = document.getElementById('stopResetBtn');
+  if (stopResetBtn) {
+    stopResetBtn.addEventListener('click', async () => {
+      if (!await showConfirm('Semua proses aktif dan task menunggu akan dibatalkan. Antrean dapat langsung digunakan kembali.', 'Stop dan reset semua proses?')) return;
+      const res = await fetch('/api/queue/stop-reset', {
+        method: 'POST',
+        headers: { 'X-Dashboard-Request': 'Google-Vids-Dashboard' }
+      });
+      const data = await res.json();
+      if (!res.ok) return showToast(data.error || 'Gagal menghentikan proses.', '⚠️');
+      showToast(`${data.cancelled} task berhasil dibatalkan.`, '⏹');
+      fetchStatus();
+    });
+  }
 
   function renderCategoryFilterBar(videos) {
     const filterBar = document.getElementById('categoryFilterBar');
@@ -1855,7 +2477,7 @@
       const signature = JSON.stringify(videos);
       if (signature === lastGallerySignature) return;
       
-      const playbackState = new Map(Array.from(galleryGrid.querySelectorAll('video[data-video-key]')).map(video => [
+      const playbackState = new Map(Array.from(galleryGrid?.querySelectorAll?.('video[data-video-key]') || []).map(video => [
         video.dataset.videoKey,
         { currentTime: video.currentTime, wasPlaying: !video.paused }
       ]));
@@ -1863,7 +2485,7 @@
 
       renderGalleryGrid();
 
-      for (const video of galleryGrid.querySelectorAll('video[data-video-key]')) {
+      for (const video of galleryGrid?.querySelectorAll?.('video[data-video-key]') || []) {
         const previous = playbackState.get(video.dataset.videoKey);
         if (!previous) continue;
         const restoreTime = () => {
@@ -1907,30 +2529,37 @@
     });
   }
 
-  document.getElementById('refreshGalleryBtn').addEventListener('click', fetchGallery);
+  const refreshGalleryBtn = document.getElementById('refreshGalleryBtn');
+  if (refreshGalleryBtn) refreshGalleryBtn.addEventListener('click', fetchGallery);
 
-  document.getElementById('galleryGrid').addEventListener('click', async (event) => {
-    const button = event.target.closest('.delete-video-btn');
-    if (!button) return;
-    const filename = decodeURIComponent(button.dataset.filename);
-    if (!await showConfirm(`Video "${filename}" akan dihapus secara permanen.`, 'Hapus video?')) return;
-    const res = await fetch(`/api/gallery/${encodeURIComponent(button.dataset.source)}/${encodeURIComponent(filename)}`, await deleteRequestOptions());
-    const data = await res.json();
-    if (!res.ok) return showToast(data.error || 'Gagal menghapus video.', '⚠️');
-    fetchGallery();
-    fetchStatus();
-    showToast('Video berhasil dihapus.', '✓');
-  });
+  const galleryGrid = document.getElementById('galleryGrid');
+  if (galleryGrid) {
+    galleryGrid.addEventListener('click', async (event) => {
+      const button = event.target.closest('.delete-video-btn');
+      if (!button) return;
+      const filename = decodeURIComponent(button.dataset.filename);
+      if (!await showConfirm(`Video "${filename}" akan dihapus secara permanen.`, 'Hapus video?')) return;
+      const res = await fetch(`/api/gallery/${encodeURIComponent(button.dataset.source)}/${encodeURIComponent(filename)}`, await deleteRequestOptions());
+      const data = await res.json();
+      if (!res.ok) return showToast(data.error || 'Gagal menghapus video.', '⚠️');
+      fetchGallery();
+      fetchStatus();
+      showToast('Video berhasil dihapus.', '✓');
+    });
+  }
 
-  document.getElementById('clearGalleryBtn').addEventListener('click', async () => {
-    if (!await showConfirm('Seluruh video dalam galeri akan dihapus secara permanen.', 'Hapus semua video?')) return;
-    const res = await fetch('/api/gallery', await deleteRequestOptions());
-    const data = await res.json();
-    if (!res.ok) return showToast(data.error || 'Gagal menghapus semua video.', '⚠️');
-    fetchGallery();
-    fetchStatus();
-    showToast('Semua video berhasil dihapus.', '✓');
-  });
+  const clearGalleryBtn = document.getElementById('clearGalleryBtn');
+  if (clearGalleryBtn) {
+    clearGalleryBtn.addEventListener('click', async () => {
+      if (!await showConfirm('Seluruh video dalam galeri akan dihapus secara permanen.', 'Hapus semua video?')) return;
+      const res = await fetch('/api/gallery', await deleteRequestOptions());
+      const data = await res.json();
+      if (!res.ok) return showToast(data.error || 'Gagal menghapus semua video.', '⚠️');
+      fetchGallery();
+      fetchStatus();
+      showToast('Semua video berhasil dihapus.', '✓');
+    });
+  }
 
   // Polling Intervals
   setInterval(fetchChromes, 4000);
