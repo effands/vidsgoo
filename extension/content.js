@@ -30,7 +30,7 @@
     // 1. Pastikan panel 'Video AI' di toolbar sisi kanan terbuka
     let promptBox = findAiPromptBox();
     if (!promptBox) {
-      console.log('[Content] Panel Video AI belum terbuka. Mencari tombol Video AI di toolbar kanan...');
+      console.log('[Content] Panel Video AI belum terbuka. Membuka tombol Video AI di toolbar kanan...');
       const videoAiButton = await waitFor(findVideoAiButton, 30000, 250, 'tombol Video AI pada toolbar kanan');
       videoAiButton.scrollIntoView?.({ block: 'center' });
       simulateClick(videoAiButton);
@@ -41,13 +41,13 @@
       promptBox = await waitFor(findAiPromptBox, 30000, 250, 'kotak prompt Google Vids');
     }
 
-    // 2. Unggah / lampirkan gambar (Avatar & Produk) jika tersedia pada task affiliate
+    // 2. Unggah gambar referensi (Avatar & Produk) TERLEBIH DAHULU sebelum mengetik script
     if (Array.isArray(images) && images.length > 0) {
       await attachImagesToVids(images, promptBox, taskId);
     }
 
-    // 3. Masukkan prompt ke kotak teks
-    setPrompt(promptBox, prompt);
+    // 3. Masukkan prompt dengan mode ketik & pemilihan chip @Gambar
+    await typePromptWithMentions(promptBox, prompt, taskId);
     selectRatio(ratio);
 
     // 4. Perluas jika ada tombol Luaskan
@@ -59,7 +59,7 @@
       try { await trustedClick(expandButton, taskId, 'Submitting'); } catch (_) {}
     }
 
-    // 5. Klik tombol Buat / Submit
+    // 5. Klik tombol Buat / Kirim (Tombol panah biru atau teks Buat)
     const createButton = await waitFor(findCreateButton, 30000, 250, 'tombol Buat / Kirim');
 
     const existingUrls = collectVideoUrls();
@@ -167,6 +167,112 @@
     });
   }
 
+  async function typePromptWithMentions(promptBox, promptText, taskId) {
+    const raw = String(promptText ?? '').trim();
+    if (!raw) throw new Error('Prompt kosong.');
+    promptBox.focus();
+
+    // Clear existing content in prompt box
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(promptBox);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    document.execCommand('delete', false, null);
+
+    // Split text by mention tokens like @Gambar1, @Gambar2, @Gambar3
+    const tokenRegex = /(@Gambar\d+)/gi;
+    const parts = raw.split(tokenRegex);
+
+    for (const part of parts) {
+      if (!part) continue;
+
+      const match = part.match(/^@Gambar(\d+)$/i);
+      if (match) {
+        const imageIndex = match[1];
+        const tagLabel = `Gambar${imageIndex}`;
+
+        // Ketik '@' untuk memunculkan popup mention pilihan gambar
+        insertTextAtCaret(promptBox, '@');
+        await new Promise(r => setTimeout(r, 450));
+
+        // Cari popover suggestion yang berisi 'Gambar1', 'Gambar2', dst.
+        const suggestion = await findMentionSuggestion(tagLabel, imageIndex);
+        if (suggestion) {
+          simulateClick(suggestion);
+          try { await trustedClick(suggestion, taskId, `Pilih Chip ${tagLabel}`); } catch (_) {}
+          await new Promise(r => setTimeout(r, 300));
+        } else {
+          // Fallback jika menu suggestion tidak terbuka, tekan Enter atau selesaikan teks
+          dispatchEnterKey(promptBox);
+          await new Promise(r => setTimeout(r, 200));
+          const currentText = readPrompt(promptBox);
+          if (!currentText.includes(tagLabel)) {
+            insertTextAtCaret(promptBox, tagLabel);
+          }
+        }
+      } else {
+        // Segmen teks biasa
+        insertTextAtCaret(promptBox, part);
+        await new Promise(r => setTimeout(r, 60));
+      }
+    }
+
+    promptBox.dispatchEvent(new InputEvent('input', { bubbles: true }));
+    promptBox.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function insertTextAtCaret(element, text) {
+    element.focus();
+    const inserted = document.execCommand('insertText', false, text);
+    if (!inserted) {
+      const sel = window.getSelection();
+      if (sel.getRangeAt && sel.rangeCount) {
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        const textNode = document.createTextNode(text);
+        range.insertNode(textNode);
+        range.setStartAfter(textNode);
+        range.setEndAfter(textNode);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
+    element.dispatchEvent(new InputEvent('input', {
+      bubbles: true,
+      inputType: 'insertText',
+      data: text
+    }));
+  }
+
+  function dispatchEnterKey(element) {
+    const opts = { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true };
+    element.dispatchEvent(new KeyboardEvent('keydown', opts));
+    element.dispatchEvent(new KeyboardEvent('keypress', opts));
+    element.dispatchEvent(new KeyboardEvent('keyup', opts));
+  }
+
+  async function findMentionSuggestion(tagLabel, index) {
+    for (let i = 0; i < 6; i++) {
+      const popups = Array.from(document.querySelectorAll(
+        '[role="menuitem"], [role="option"], [role="listbox"] div, div[tabindex], div, span, img'
+      ));
+      const match = popups.find(el => {
+        if (!isVisible(el)) return false;
+        const text = (el.textContent || '').trim().replace(/\s+/g, ' ');
+        const aria = (el.getAttribute('aria-label') || '').toLowerCase();
+        if (text.includes(tagLabel) || text.includes(`Gambar ${index}`) || aria.includes(tagLabel.toLowerCase())) {
+          const rect = el.getBoundingClientRect();
+          return rect.width > 15 && rect.width < 320 && rect.height > 15 && rect.height < 320;
+        }
+        return false;
+      });
+      if (match) return match;
+      await new Promise(r => setTimeout(r, 200));
+    }
+    return null;
+  }
+
   function dataUrlToFile(dataUrl, filename) {
     if (!dataUrl || !dataUrl.includes(',')) return null;
     const parts = dataUrl.split(',');
@@ -187,22 +293,24 @@
 
     if (!files.length) return;
 
-    // Klik tombol 'Bahan' atau '+ Tambahkan' jika ada
-    const bahanButton = findBahanOrAddButton();
-    if (bahanButton) {
-      simulateClick(bahanButton);
-      try { await trustedClick(bahanButton, taskId, 'Klik Bahan Upload'); } catch (_) {}
-      await new Promise(r => setTimeout(r, 400));
+    console.log(`[Content] Memulai upload ${files.length} file gambar ke Google Vids...`);
 
-      const uploadMenuItem = findUploadMenuItem();
-      if (uploadMenuItem) {
-        simulateClick(uploadMenuItem);
-        try { await trustedClick(uploadMenuItem, taskId, 'Pilih Upload File'); } catch (_) {}
-        await new Promise(r => setTimeout(r, 400));
+    // 1. Klik tombol '+ Tambahkan' atau 'Bahan'
+    const addBtn = findBahanOrAddButton();
+    if (addBtn) {
+      simulateClick(addBtn);
+      try { await trustedClick(addBtn, taskId, 'Klik Tambah Gambar'); } catch (_) {}
+      await new Promise(r => setTimeout(r, 500));
+
+      const uploadItem = findUploadMenuItem();
+      if (uploadItem) {
+        simulateClick(uploadItem);
+        try { await trustedClick(uploadItem, taskId, 'Pilih Upload File'); } catch (_) {}
+        await new Promise(r => setTimeout(r, 500));
       }
     }
 
-    // Injeksi file input
+    // 2. Injeksi berkas gambar ke input[type="file"]
     const fileInputs = Array.from(document.querySelectorAll('input[type="file"]'));
     if (fileInputs.length > 0) {
       const dt = new DataTransfer();
@@ -216,7 +324,7 @@
       }
     }
 
-    // Drag & Drop
+    // 3. Drag & Drop ke promptBox
     try {
       const dropTarget = document.querySelector('[role="textbox"]') || promptBox;
       const dt = new DataTransfer();
@@ -226,7 +334,7 @@
       dropTarget.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }));
     } catch (_) {}
 
-    // Paste
+    // 4. Paste ke promptBox
     try {
       const dt = new DataTransfer();
       files.forEach(f => dt.items.add(f));
@@ -237,7 +345,8 @@
       }));
     } catch (_) {}
 
-    await new Promise(r => setTimeout(r, 1500));
+    // Beri jeda agar Google Vids selesai memproses thumbnail chip (@Gambar1, @Gambar2)
+    await new Promise(r => setTimeout(r, 2000));
   }
 
   function findBahanOrAddButton() {
@@ -247,7 +356,8 @@
       const text = (el.textContent || '').trim().toLowerCase();
       const aria = (el.getAttribute('aria-label') || '').toLowerCase();
       const tooltip = (el.getAttribute('data-tooltip') || '').toLowerCase();
-      return text === 'bahan' || text === '+ tambahkan' || text === 'tambahkan' ||
+      return text === 'tambahkan' || text === '+ tambahkan' || text.includes('tambahkan') ||
+             text === 'bahan' || text.includes('bahan') ||
              aria.includes('tambahkan') || aria.includes('bahan') || tooltip.includes('bahan');
     });
   }
@@ -283,30 +393,6 @@
     el.dispatchEvent(new MouseEvent('mouseup', { ...opts, buttons: 0 }));
     el.dispatchEvent(new MouseEvent('click', { ...opts, buttons: 0 }));
     try { el.click(); } catch (_) {}
-  }
-
-  function setPrompt(element, prompt) {
-    const expected = String(prompt ?? '').trim();
-    if (!expected) throw new Error('Prompt kosong.');
-    element.focus();
-    const selection = window.getSelection();
-    const range = document.createRange();
-    range.selectNodeContents(element);
-    selection.removeAllRanges();
-    selection.addRange(range);
-    const inserted = document.execCommand('insertText', false, expected);
-    if (!inserted || readPrompt(element) !== normalizePrompt(expected)) {
-      element.textContent = expected;
-    }
-    element.dispatchEvent(new InputEvent('input', {
-      bubbles: true,
-      inputType: 'insertText',
-      data: expected
-    }));
-    element.dispatchEvent(new Event('change', { bubbles: true }));
-    if (readPrompt(element) !== normalizePrompt(expected)) {
-      throw new Error('Google Vids tidak menerima prompt lengkap; proses dibatalkan agar prompt lama tidak digunakan.');
-    }
   }
 
   function normalizePrompt(value) {
