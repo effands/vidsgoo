@@ -551,7 +551,28 @@ async function processNextQueue() {
   }
 }
 
+function printBanner(port = PORT) {
+  if (!process.stdout.isTTY) return;
+  console.log(`
+\x1b[36m  ██╗   ██╗██╗██████╗ ███████╗     ██████╗  ██████╗  ██████╗ 
+  ██║   ██║██║██╔══██╗██╔════╝    ██╔════╝ ██╔═══██╗██╔═══██╗
+  ██║   ██║██║██║  ██║███████╗    ██║  ███╗██║   ██║██║   ██║
+  ╚██╗ ██╔╝██║██║  ██║╚════██║    ██║   ██║██║   ██║██║   ██║
+   ╚████╔╝ ██║██████╔╝███████║    ╚██████╔╝╚██████╔╝╚██████╔╝
+    ╚═══╝  ╚═╝╚═════╝ ╚══════╝     ╚═════╝  ╚═════╝  ╚═════╝\x1b[0m
+
+\x1b[90m  ===========================================================\x1b[0m
+\x1b[1;37m     GOOGLE VIDS AUTOMATION STUDIO - MULTI-CHROME FLEET\x1b[0m
+\x1b[90m  ===========================================================\x1b[0m
+
+  \x1b[32m[+]\x1b[0m Web Dashboard : \x1b[36mhttp://127.0.0.1:${port}\x1b[0m
+  \x1b[33m[!]\x1b[0m Penopang Server: Jangan tutup jendela ini saat otomasi aktif.
+\x1b[90m  ===========================================================\x1b[0m
+`);
+}
+
 function startServer(port = PORT) {
+  printBanner(port);
   const server = app.listen(port, '127.0.0.1', () => {
     addLog(`Google Vids Multi-Chrome Manager berjalan di http://127.0.0.1:${port}`);
     startTerminalHeartbeat();
@@ -571,3 +592,4 @@ function startServer(port = PORT) {
 if (require.main === module) startServer();
 
 module.exports = { app, startServer };
+
