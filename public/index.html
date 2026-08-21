@@ -117,17 +117,20 @@
       font-size: 0.9375rem;
       line-height: 1.5;
       min-height: 100vh;
-      padding: 24px;
+      padding: 20px 24px 32px 24px;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
     }
 
     /* ==========================================================================
        Top Navigation Bar
        ========================================================================== */
     .top-bar {
-      max-width: 1440px;
-      margin: 0 auto 24px auto;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -136,6 +139,7 @@
       border: 1px solid var(--border-subtle);
       border-radius: 12px;
       box-shadow: var(--shadow-sm);
+      margin-bottom: 16px;
     }
 
     .brand-group {
@@ -148,12 +152,12 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 36px;
-      height: 36px;
+      width: 38px;
+      height: 38px;
       background: var(--accent-primary);
       color: #ffffff;
       border-radius: 8px;
-      font-size: 1.15rem;
+      font-size: 1.2rem;
       font-weight: 700;
       flex-shrink: 0;
     }
@@ -178,6 +182,12 @@
       display: flex;
       align-items: center;
       gap: 12px;
+    }
+
+    .quick-status-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .theme-toggle-btn {
@@ -206,15 +216,95 @@
     }
 
     /* ==========================================================================
-       Layout Grid
+       Menu Tab Navigation Bar
        ========================================================================== */
-    .app-layout {
-      max-width: 1440px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 340px minmax(0, 1fr);
-      gap: 24px;
-      align-items: start;
+    .menu-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 24px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .menu-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .nav-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+      user-select: none;
+      min-height: 40px;
+    }
+
+    .nav-tab-btn:hover {
+      background: var(--bg-surface-hover);
+      color: var(--text-primary);
+    }
+
+    .nav-tab-btn.active {
+      background: var(--bg-inset);
+      border-color: var(--border-strong);
+      color: var(--accent-text);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-tab-btn:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    .tab-counter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg-subtle);
+      color: var(--text-secondary);
+    }
+
+    .nav-tab-btn.active .tab-counter {
+      background: var(--accent-primary);
+      color: #ffffff;
+    }
+
+    /* ==========================================================================
+       Tab Panes & Layouts
+       ========================================================================== */
+    .tab-pane {
+      display: none;
+    }
+
+    .tab-pane.active {
+      display: block;
+      animation: tabFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     /* ==========================================================================
@@ -240,7 +330,7 @@
     }
 
     .card-header h2 {
-      font-size: 1rem;
+      font-size: 1.0625rem;
       font-weight: 700;
       letter-spacing: -0.015em;
       color: var(--text-primary);
@@ -253,8 +343,16 @@
       padding: 20px;
     }
 
+    /* Composer Layout */
+    .composer-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 20px;
+      align-items: start;
+    }
+
     /* ==========================================================================
-       Sidebar Elements (Agent Fleet)
+       Sidebar & Info Elements
        ========================================================================== */
     .chrome-fleet-list {
       display: flex;
@@ -266,7 +364,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 14px;
+      padding: 14px 16px;
       background: var(--bg-inset);
       border: 1px solid var(--border-subtle);
       border-radius: 8px;
@@ -279,7 +377,7 @@
 
     .chrome-item-info strong {
       display: block;
-      font-size: 0.875rem;
+      font-size: 0.9375rem;
       font-weight: 600;
       color: var(--text-primary);
     }
@@ -287,29 +385,19 @@
     .chrome-item-port {
       display: inline-block;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
+      font-size: 0.775rem;
       color: var(--text-secondary);
-      margin-top: 2px;
-    }
-
-    .sidebar-note {
-      font-size: 0.8125rem;
-      color: var(--text-secondary);
-      line-height: 1.6;
-    }
-
-    .sidebar-note p + p {
-      margin-top: 8px;
+      margin-top: 3px;
     }
 
     .info-callout {
-      padding: 12px 14px;
+      padding: 14px 16px;
       background: var(--accent-tint);
       border: 1px solid var(--status-info-border);
       border-radius: 8px;
       color: var(--text-primary);
-      font-size: 0.8125rem;
-      line-height: 1.5;
+      font-size: 0.84375rem;
+      line-height: 1.55;
     }
 
     /* ==========================================================================
@@ -370,7 +458,7 @@
     }
 
     .prompt-composer-shell textarea {
-      min-height: 160px;
+      min-height: 200px;
       padding: 10px 12px;
       background: transparent;
       border: none;
@@ -385,12 +473,12 @@
     }
 
     .prompt-syntax-guide {
-      padding: 12px;
+      padding: 14px;
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: 8px;
       color: var(--text-secondary);
-      font-size: 0.775rem;
+      font-size: 0.7875rem;
       line-height: 1.55;
       display: flex;
       flex-direction: column;
@@ -512,7 +600,7 @@
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      padding: 3px 8px;
+      padding: 4px 9px;
       border-radius: 6px;
       font-size: 0.75rem;
       font-weight: 700;
@@ -563,7 +651,7 @@
     }
 
     th, td {
-      padding: 12px 14px;
+      padding: 12px 16px;
       border-bottom: 1px solid var(--border-subtle);
     }
 
@@ -612,7 +700,7 @@
     .table-empty-row {
       text-align: center;
       color: var(--text-secondary);
-      padding: 32px 14px;
+      padding: 40px 16px;
       font-size: 0.875rem;
     }
 
@@ -621,18 +709,18 @@
        ========================================================================== */
     .gallery-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
     }
 
     .gallery-card {
       background: var(--bg-inset);
       border: 1px solid var(--border-subtle);
       border-radius: 10px;
-      padding: 12px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
       transition: border-color 0.15s ease;
     }
 
@@ -642,7 +730,7 @@
 
     .gallery-card video {
       width: 100%;
-      height: 170px;
+      height: 180px;
       object-fit: contain;
       background: #000000;
       border-radius: 6px;
@@ -650,7 +738,7 @@
     }
 
     .gallery-filename {
-      font-size: 0.8125rem;
+      font-size: 0.84375rem;
       font-weight: 600;
       color: var(--text-primary);
       overflow: hidden;
@@ -680,19 +768,19 @@
       background: var(--bg-inset);
       border: 1px solid var(--border-subtle);
       border-radius: 10px;
-      height: 280px;
+      height: 480px;
       overflow-y: auto;
       font-family: 'JetBrains Mono', monospace;
     }
 
     .log-row {
       display: grid;
-      grid-template-columns: 88px 108px minmax(0, 1fr);
+      grid-template-columns: 88px 116px minmax(0, 1fr);
       gap: 10px;
       align-items: start;
-      padding: 8px 12px;
+      padding: 9px 14px;
       border-bottom: 1px solid var(--border-subtle);
-      font-size: 0.775rem;
+      font-size: 0.7875rem;
       line-height: 1.5;
     }
 
@@ -759,7 +847,7 @@
       justify-content: center;
       height: 100%;
       color: var(--text-secondary);
-      font-size: 0.8125rem;
+      font-size: 0.875rem;
     }
 
     /* ==========================================================================
@@ -881,7 +969,7 @@
        Responsive Breakpoints
        ========================================================================== */
     @media (max-width: 1024px) {
-      .app-layout {
+      .composer-grid {
         grid-template-columns: 1fr;
       }
       body {
@@ -903,7 +991,7 @@
       }
       .top-controls {
         width: 100%;
-        justify-content: flex-end;
+        justify-content: space-between;
       }
       .batch-options-grid {
         grid-template-columns: 1fr;
@@ -923,121 +1011,147 @@
 </head>
 <body>
 
-<!-- Header Navigation Bar -->
-<header class="top-bar">
-  <div class="brand-group">
-    <div class="brand-mark" aria-hidden="true">🎬</div>
-    <div>
-      <h1 class="brand-title">Google Vids Studio Multi-Chrome</h1>
-      <div class="brand-meta">
-        <span>Console Otomatisasi Video</span>
-        <span>·</span>
-        <span id="systemStatusTag" class="status-Completed">System Ready</span>
+<div class="container">
+  <!-- Header Top Bar -->
+  <header class="top-bar">
+    <div class="brand-group">
+      <div class="brand-mark" aria-hidden="true">🎬</div>
+      <div>
+        <h1 class="brand-title">Google Vids Studio Multi-Chrome</h1>
+        <div class="brand-meta">
+          <span>Console Otomatisasi Video</span>
+          <span>·</span>
+          <span id="systemStatusTag" class="status-Completed">System Ready</span>
+        </div>
       </div>
     </div>
-  </div>
-  <div class="top-controls">
-    <button id="themeToggle" class="theme-toggle-btn" type="button" aria-label="Ganti Tema">
-      <span id="themeIcon" aria-hidden="true">🌙</span>
-      <span id="themeText">Tema Gelap</span>
+    <div class="top-controls">
+      <div class="quick-status-group">
+        <span id="topOnlineBadge" class="badge badge-offline">0 Online</span>
+        <span id="topQueueBadge" class="badge badge-info">0 Task</span>
+      </div>
+      <button id="themeToggle" class="theme-toggle-btn" type="button" aria-label="Ganti Tema">
+        <span id="themeIcon" aria-hidden="true">🌙</span>
+        <span id="themeText">Tema Gelap</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Navigation Menu Bar Tabs -->
+  <nav class="menu-bar" role="tablist" aria-label="Navigasi Modul Studio">
+    <button class="nav-tab-btn active" role="tab" aria-selected="true" aria-controls="pane-composer" id="tab-composer" data-tab="composer">
+      <span>✨ Buat Video</span>
     </button>
-  </div>
-</header>
+    <button class="nav-tab-btn" role="tab" aria-selected="false" aria-controls="pane-queue" id="tab-queue" data-tab="queue">
+      <span>📋 Antrean Task</span>
+      <span id="navQueueBadge" class="tab-counter">0</span>
+    </button>
+    <button class="nav-tab-btn" role="tab" aria-selected="false" aria-controls="pane-gallery" id="tab-gallery" data-tab="gallery">
+      <span>🎬 Galeri Video</span>
+      <span id="navGalleryBadge" class="tab-counter">0</span>
+    </button>
+    <button class="nav-tab-btn" role="tab" aria-selected="false" aria-controls="pane-logs" id="tab-logs" data-tab="logs">
+      <span>⚡ Live Logs</span>
+    </button>
+    <button class="nav-tab-btn" role="tab" aria-selected="false" aria-controls="pane-fleet" id="tab-fleet" data-tab="fleet">
+      <span>🧩 Chrome Fleet</span>
+      <span id="navFleetBadge" class="tab-counter">0 Online</span>
+    </button>
+  </nav>
 
-<!-- Main Application Layout -->
-<main class="app-layout">
-  
-  <!-- Left Column: Agent Fleet Management -->
-  <aside class="sidebar">
-    <section class="studio-card">
-      <div class="card-header">
-        <h2>Chrome Extension Fleet</h2>
-        <span id="chromeOnlineBadge" class="badge badge-offline">0 Online</span>
-      </div>
-      <div class="card-body">
-        <div id="chromeList" class="chrome-fleet-list">
-          <div style="color: var(--text-secondary); font-size: 0.8125rem;">Menunggu Chrome Extension terhubung...</div>
+  <!-- TAB 1: Task Composer -->
+  <section id="pane-composer" class="tab-pane active" role="tabpanel" aria-labelledby="tab-composer">
+    <div class="composer-grid">
+      <!-- Main Form Card -->
+      <div class="studio-card">
+        <div class="card-header">
+          <h2>
+            <span>Batch Video Baru</span>
+          </h2>
+          <span class="badge badge-info">Task Composer</span>
+        </div>
+        <div class="card-body">
+          <form id="queueForm">
+            <div class="form-group" style="display: none;">
+              <label for="targetUrl">URL Google Vids Target (Opsional)</label>
+              <input type="text" id="targetUrl" placeholder="Kosongkan untuk deteksi otomatis tab Google Vids pada Chrome">
+            </div>
+
+            <div class="batch-options-grid">
+              <div class="form-group">
+                <label for="ratio">Rasio Aspek Video</label>
+                <select id="ratio">
+                  <option value="16:9">16:9 (Lanskap)</option>
+                  <option value="9:16">9:16 (Potret)</option>
+                  <option value="1:1">1:1 (Persegi)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="targetChrome">Pilih Eksekutor Chrome</label>
+                <select id="targetChrome">
+                  <option value="auto">Auto Switch (Pilih Chrome Online Secara Otomatis)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="prompts">Prompt Video (Batch)</label>
+              <div class="prompt-composer-shell">
+                <textarea id="prompts" placeholder="Embun pagi menyelimuti sungai, kamera bergerak perlahan mengikuti arus.&#10;&#10;Perahu kayu melintas saat matahari terbit, suasana tenang dan sinematik." required></textarea>
+                <aside class="prompt-syntax-guide">
+                  <div>
+                    <strong>Aturan 1 Blok = 1 Video</strong>
+                    Tulis prompt beberapa baris. Untuk memisahkan antar video, sisakan satu baris kosong dengan menekan:
+                  </div>
+                  <div style="margin-top: 10px;">
+                    <kbd>Enter</kbd> + <kbd>Enter</kbd>
+                  </div>
+                </aside>
+              </div>
+            </div>
+
+            <div style="margin-top: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+              <button type="submit" class="btn btn-primary" style="min-width: 220px;">
+                <span>Masukkan ke Antrean</span>
+              </button>
+              <span style="font-size: 0.8125rem; color: var(--text-secondary);">
+                Chrome online akan mengeksekusi prompt secara paralel otomatis.
+              </span>
+            </div>
+          </form>
         </div>
       </div>
-    </section>
 
-    <section class="studio-card">
-      <div class="card-header">
-        <h2>Petunjuk Koneksi Otomatis</h2>
-      </div>
-      <div class="card-body sidebar-note">
-        <p>Setiap browser Chrome yang telah terpasang <strong>Google Vids AI Helper Extension</strong> akan langsung terdeteksi pada daftar di atas.</p>
-        <div class="info-callout" style="margin-top: 12px;">
-          Buka tab Google Vids di masing-masing jendela Chrome agar eksekutor siap menerima antrean video.
-        </div>
-      </div>
-    </section>
-  </aside>
-
-  <!-- Right Column: Task Dispatch, Queue & Observability -->
-  <section class="main-content">
-    
-    <!-- Batch Task Composer -->
-    <div class="studio-card">
-      <div class="card-header">
-        <h2>
-          <span>Batch Video Baru</span>
-        </h2>
-        <span class="badge badge-info">Task Composer</span>
-      </div>
-      <div class="card-body">
-        <form id="queueForm">
-          <div class="form-group" style="display: none;">
-            <label for="targetUrl">URL Google Vids Target (Opsional)</label>
-            <input type="text" id="targetUrl" placeholder="Kosongkan untuk deteksi otomatis tab Google Vids pada Chrome">
+      <!-- Quick Fleet Summary Widget -->
+      <div>
+        <div class="studio-card">
+          <div class="card-header">
+            <h2>Eksekutor Standby</h2>
           </div>
-
-          <div class="batch-options-grid">
-            <div class="form-group">
-              <label for="ratio">Rasio Aspek Video</label>
-              <select id="ratio">
-                <option value="16:9">16:9 (Lanskap)</option>
-                <option value="9:16">9:16 (Potret)</option>
-                <option value="1:1">1:1 (Persegi)</option>
-              </select>
+          <div class="card-body">
+            <div id="quickFleetList" class="chrome-fleet-list">
+              <div style="color: var(--text-secondary); font-size: 0.8125rem;">Memuat daftar Chrome...</div>
             </div>
-            <div class="form-group">
-              <label for="targetChrome">Pilih Eksekutor Chrome</label>
-              <select id="targetChrome">
-                <option value="auto">Auto Switch (Pilih Chrome Online Secara Otomatis)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="prompts">Prompt Video (Batch)</label>
-            <div class="prompt-composer-shell">
-              <textarea id="prompts" placeholder="Embun pagi menyelimuti sungai, kamera bergerak perlahan mengikuti arus.&#10;&#10;Perahu kayu melintas saat matahari terbit, suasana tenang dan sinematik." required></textarea>
-              <aside class="prompt-syntax-guide">
-                <div>
-                  <strong>Aturan 1 Blok = 1 Video</strong>
-                  Tulis prompt beberapa baris. Untuk memisahkan antar video, sisakan satu baris kosong dengan menekan:
-                </div>
-                <div style="margin-top: 8px;">
-                  <kbd>Enter</kbd> + <kbd>Enter</kbd>
-                </div>
-              </aside>
-            </div>
-          </div>
-
-          <div style="margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-            <button type="submit" class="btn btn-primary" style="min-width: 200px;">
-              <span>Masukkan ke Antrean</span>
+            <button class="btn btn-secondary btn-full btn-sm" style="margin-top: 14px;" type="button" onclick="switchTab('fleet')">
+              Buka Manajemen Fleet
             </button>
-            <span style="font-size: 0.775rem; color: var(--text-secondary);">
-              Chrome online akan dieksekusi bergantian secara paralel otomatis.
-            </span>
           </div>
-        </form>
+        </div>
+
+        <div class="studio-card">
+          <div class="card-header">
+            <h2>Tips Pembuatan</h2>
+          </div>
+          <div class="card-body" style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.6;">
+            <p>Gunakan deskripsi visual yang spesifik (suasana cahaya, pergerakan kamera, dan objek utama) untuk hasil generasi video optimal.</p>
+          </div>
+        </div>
       </div>
     </div>
+  </section>
 
-    <!-- Queue Status Table -->
+  <!-- TAB 2: Queue Matrix -->
+  <section id="pane-queue" class="tab-pane" role="tabpanel" aria-labelledby="tab-queue">
     <div class="studio-card">
       <div class="card-header">
         <h2>
@@ -1060,10 +1174,10 @@
               <tr>
                 <th style="width: 50px;">No</th>
                 <th>Prompt Video</th>
-                <th style="width: 90px;">Rasio</th>
-                <th style="width: 130px;">Status</th>
-                <th style="width: 160px;">Waktu Dibuat</th>
-                <th style="width: 150px; text-align: right;">Aksi</th>
+                <th style="width: 100px;">Rasio</th>
+                <th style="width: 140px;">Status</th>
+                <th style="width: 180px;">Waktu Dibuat</th>
+                <th style="width: 170px; text-align: right;">Aksi</th>
               </tr>
             </thead>
             <tbody id="queueTable">
@@ -1075,8 +1189,10 @@
         </div>
       </div>
     </div>
+  </section>
 
-    <!-- Video Gallery Grid -->
+  <!-- TAB 3: Video Gallery -->
+  <section id="pane-gallery" class="tab-pane" role="tabpanel" aria-labelledby="tab-gallery">
     <div class="studio-card">
       <div class="card-header">
         <h2>Galeri Video Downloaded</h2>
@@ -1091,17 +1207,21 @@
       </div>
       <div class="card-body">
         <div id="galleryGrid" class="gallery-grid">
-          <div style="color: var(--text-secondary); font-size: 0.8125rem; grid-column: 1 / -1; padding: 12px 0;">
+          <div style="color: var(--text-secondary); font-size: 0.84375rem; grid-column: 1 / -1; padding: 24px 0; text-align: center;">
             Belum ada video downloaded. Video yang selesai didownload akan muncul di sini.
           </div>
         </div>
       </div>
     </div>
+  </section>
 
-    <!-- Live Automation Activity Feed (Logs) -->
+  <!-- TAB 4: Live Observability Logs -->
+  <section id="pane-logs" class="tab-pane" role="tabpanel" aria-labelledby="tab-logs">
     <div class="studio-card">
       <div class="card-header">
-        <h2>Aktivitas Otomatisasi (Live Stream)</h2>
+        <h2>
+          <span>Aktivitas Otomatisasi (Live Stream)</span>
+        </h2>
         <span class="badge badge-online">Live Feed</span>
       </div>
       <div class="card-body" style="padding: 12px;">
@@ -1110,9 +1230,37 @@
         </div>
       </div>
     </div>
-
   </section>
-</main>
+
+  <!-- TAB 5: Chrome Fleet Management -->
+  <section id="pane-fleet" class="tab-pane" role="tabpanel" aria-labelledby="tab-fleet">
+    <div class="composer-grid">
+      <div class="studio-card">
+        <div class="card-header">
+          <h2>Daftar Chrome Extension Fleet</h2>
+          <span id="chromeFleetCountBadge" class="badge badge-offline">0 Online</span>
+        </div>
+        <div class="card-body">
+          <div id="chromeFleetList" class="chrome-fleet-list">
+            <div style="color: var(--text-secondary); font-size: 0.84375rem; padding: 12px 0;">Menunggu Chrome Extension terhubung...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="studio-card">
+        <div class="card-header">
+          <h2>Petunjuk Koneksi</h2>
+        </div>
+        <div class="card-body" style="font-size: 0.84375rem; color: var(--text-secondary); line-height: 1.6;">
+          <p>Setiap browser Chrome yang terpasang <strong>Google Vids AI Helper Extension</strong> akan langsung terdeteksi otomatis.</p>
+          <div class="info-callout" style="margin-top: 14px;">
+            Pastikan tab <code>https://docs.google.com/videos</code> terbuka di masing-masing jendela Chrome agar prompt siap dieksekusi.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
 
 <!-- Confirmation Modal Dialog -->
 <div id="confirmDialog" class="dialog-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
@@ -1134,6 +1282,39 @@
 
 <!-- Application Logic -->
 <script>
+  // Tab Switching Logic
+  const tabButtons = document.querySelectorAll('.nav-tab-btn');
+  const tabPanes = document.querySelectorAll('.tab-pane');
+
+  function switchTab(tabId) {
+    tabButtons.forEach(btn => {
+      const isActive = btn.dataset.tab === tabId;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+
+    tabPanes.forEach(pane => {
+      const isTarget = pane.id === `pane-${tabId}`;
+      pane.classList.toggle('active', isTarget);
+    });
+
+    try {
+      history.replaceState(null, '', `#${tabId}`);
+    } catch (_) {}
+  }
+
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      switchTab(btn.dataset.tab);
+    });
+  });
+
+  // Restore active tab from URL hash if available
+  const initialHash = window.location.hash.replace('#', '');
+  if (initialHash && ['composer', 'queue', 'gallery', 'logs', 'fleet'].includes(initialHash)) {
+    switchTab(initialHash);
+  }
+
   // Theme Switching Logic (Dark / Light Mode)
   const themeToggle = document.getElementById('themeToggle');
   const themeIcon = document.getElementById('themeIcon');
@@ -1229,32 +1410,49 @@
       const res = await fetch('/api/chromes');
       const instances = await res.json();
       
-      const chromeListDiv = document.getElementById('chromeList');
+      const quickFleetList = document.getElementById('quickFleetList');
+      const chromeFleetList = document.getElementById('chromeFleetList');
       const targetChromeSelect = document.getElementById('targetChrome');
-      const chromeOnlineBadge = document.getElementById('chromeOnlineBadge');
+      const topOnlineBadge = document.getElementById('topOnlineBadge');
+      const navFleetBadge = document.getElementById('navFleetBadge');
+      const chromeFleetCountBadge = document.getElementById('chromeFleetCountBadge');
       
-      chromeListDiv.innerHTML = '';
+      if (quickFleetList) quickFleetList.innerHTML = '';
+      if (chromeFleetList) chromeFleetList.innerHTML = '';
       targetChromeSelect.innerHTML = '<option value="auto">Auto Switch (Pilih Chrome Online Secara Otomatis)</option>';
 
       let onlineCount = 0;
 
       if (!instances || instances.length === 0) {
-        chromeListDiv.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.8125rem; padding: 6px 0;">Menunggu Chrome Extension terhubung...</div>';
+        const emptyMsg = '<div style="color: var(--text-secondary); font-size: 0.8125rem; padding: 6px 0;">Menunggu Chrome Extension terhubung...</div>';
+        if (quickFleetList) quickFleetList.innerHTML = emptyMsg;
+        if (chromeFleetList) chromeFleetList.innerHTML = emptyMsg;
       } else {
         instances.forEach(c => {
           const isOnline = c.status === 'Online';
           if (isOnline) onlineCount++;
 
-          const item = document.createElement('div');
-          item.className = 'chrome-item';
-          item.innerHTML = `
+          const html = `
             <div class="chrome-item-info">
               <strong>${escapeHtml(c.name)}</strong>
               <span class="chrome-item-port">Port: ${escapeHtml(c.port)}</span>
             </div>
             <span class="badge ${isOnline ? 'badge-online' : 'badge-offline'}">${escapeHtml(c.status)}</span>
           `;
-          chromeListDiv.appendChild(item);
+
+          if (quickFleetList) {
+            const item = document.createElement('div');
+            item.className = 'chrome-item';
+            item.innerHTML = html;
+            quickFleetList.appendChild(item);
+          }
+
+          if (chromeFleetList) {
+            const item = document.createElement('div');
+            item.className = 'chrome-item';
+            item.innerHTML = html;
+            chromeFleetList.appendChild(item);
+          }
 
           if (isOnline) {
             const opt = document.createElement('option');
@@ -1265,9 +1463,19 @@
         });
       }
 
-      if (chromeOnlineBadge) {
-        chromeOnlineBadge.textContent = `${onlineCount} Online`;
-        chromeOnlineBadge.className = onlineCount > 0 ? 'badge badge-online' : 'badge badge-offline';
+      const statusText = `${onlineCount} Online`;
+      const badgeClass = onlineCount > 0 ? 'badge badge-online' : 'badge badge-offline';
+      
+      if (topOnlineBadge) {
+        topOnlineBadge.textContent = statusText;
+        topOnlineBadge.className = badgeClass;
+      }
+      if (navFleetBadge) {
+        navFleetBadge.textContent = statusText;
+      }
+      if (chromeFleetCountBadge) {
+        chromeFleetCountBadge.textContent = statusText;
+        chromeFleetCountBadge.className = badgeClass;
       }
     } catch (err) {
       console.error('Gagal mengambil status Chrome:', err);
@@ -1351,6 +1559,7 @@
     if (task) {
       document.getElementById('prompts').value = task.prompt;
       if (task.ratio) document.getElementById('ratio').value = task.ratio;
+      switchTab('composer');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       showToast('Prompt dimuat ke kolom input.', '↺');
     }
@@ -1362,13 +1571,18 @@
       const data = await res.json();
 
       currentQueueData = data.queue || [];
+      const count = data.queue.length;
+
       const queueBadge = document.getElementById('queueBadge');
-      if (queueBadge) {
-        queueBadge.textContent = `${data.queue.length} Task`;
-      }
+      const topQueueBadge = document.getElementById('topQueueBadge');
+      const navQueueBadge = document.getElementById('navQueueBadge');
+
+      if (queueBadge) queueBadge.textContent = `${count} Task`;
+      if (topQueueBadge) topQueueBadge.textContent = `${count} Task`;
+      if (navQueueBadge) navQueueBadge.textContent = count;
 
       const tbody = document.getElementById('queueTable');
-      if (data.queue.length === 0) {
+      if (count === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="table-empty-row">Belum ada task dalam antrean.</td></tr>';
       } else {
         tbody.innerHTML = data.queue.map((t, idx) => `
@@ -1422,6 +1636,7 @@
       document.getElementById('prompts').value = '';
       showToast('Batch task berhasil dimasukkan ke antrean!', '✓');
       fetchStatus();
+      switchTab('queue');
     }
   });
 
@@ -1450,6 +1665,12 @@
       const res = await fetch('/api/gallery');
       const videos = await res.json();
       const galleryGrid = document.getElementById('galleryGrid');
+      const navGalleryBadge = document.getElementById('navGalleryBadge');
+      
+      if (navGalleryBadge) {
+        navGalleryBadge.textContent = videos ? videos.length : 0;
+      }
+
       const signature = JSON.stringify(videos);
       if (signature === lastGallerySignature) return;
       
@@ -1460,7 +1681,7 @@
       lastGallerySignature = signature;
 
       if (!videos || videos.length === 0) {
-        galleryGrid.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.8125rem; grid-column: 1 / -1; padding: 12px 0;">Belum ada video downloaded. Hasil video yang selesai didownload akan muncul di sini.</div>';
+        galleryGrid.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.84375rem; grid-column: 1 / -1; padding: 24px 0; text-align: center;">Belum ada video downloaded. Video yang selesai didownload akan muncul di sini.</div>';
         return;
       }
 
