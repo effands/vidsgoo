@@ -198,19 +198,10 @@
 
         // Cari popover suggestion yang berisi 'Gambar1', 'Gambar2', dst.
         const suggestion = await findMentionSuggestion(tagLabel, imageIndex);
-        if (suggestion) {
-          simulateClick(suggestion);
-          try { await trustedClick(suggestion, taskId, `Pilih Chip ${tagLabel}`); } catch (_) {}
-          await new Promise(r => setTimeout(r, 300));
-        } else {
-          // Fallback jika menu suggestion tidak terbuka, tekan Enter atau selesaikan teks
-          dispatchEnterKey(promptBox);
-          await new Promise(r => setTimeout(r, 200));
-          const currentText = readPrompt(promptBox);
-          if (!currentText.includes(tagLabel)) {
-            insertTextAtCaret(promptBox, tagLabel);
-          }
-        }
+        if (!suggestion) throw new Error('Pilihan @' + tagLabel + ' tidak muncul setelah gambar diunggah.');
+        try { await trustedClick(suggestion, taskId, 'Pilih Chip ' + tagLabel); }
+        catch (_) { simulateClick(suggestion); }
+        await new Promise(r => setTimeout(r, 300));
       } else {
         // Segmen teks biasa
         insertTextAtCaret(promptBox, part);
@@ -255,13 +246,13 @@
   async function findMentionSuggestion(tagLabel, index) {
     for (let i = 0; i < 6; i++) {
       const popups = Array.from(document.querySelectorAll(
-        '[role="menuitem"], [role="option"], [role="listbox"] div, div[tabindex], div, span, img'
+        '[role="menuitem"], [role="option"], [role="listbox"] [role="button"], [role="dialog"] [role="button"]'
       ));
       const match = popups.find(el => {
         if (!isVisible(el)) return false;
         const text = (el.textContent || '').trim().replace(/\s+/g, ' ');
         const aria = (el.getAttribute('aria-label') || '').toLowerCase();
-        if (text.includes(tagLabel) || text.includes(`Gambar ${index}`) || aria.includes(tagLabel.toLowerCase())) {
+        if (text === tagLabel || text.startsWith(tagLabel + ' ') || text === 'Gambar ' + index || aria === tagLabel.toLowerCase() || aria.startsWith(tagLabel.toLowerCase() + ' ')) {
           const rect = el.getBoundingClientRect();
           return rect.width > 15 && rect.width < 320 && rect.height > 15 && rect.height < 320;
         }
@@ -287,66 +278,43 @@
   }
 
   async function attachImagesToVids(images, promptBox, taskId) {
-    const files = images
-      .map((img, idx) => dataUrlToFile(img.dataUrl, img.name || `gambar_${idx + 1}.png`))
-      .filter(Boolean);
-
+    const files = images.slice(0, 3).map((img, idx) => ({
+      file: dataUrlToFile(img.dataUrl, img.name || 'gambar_' + (idx + 1) + '.png'),
+      tag: String(img.tag || '@Gambar' + (idx + 1)).replace(/^@/, '')
+    })).filter(item => item.file);
     if (!files.length) return;
-
-    console.log(`[Content] Memulai upload ${files.length} file gambar ke Google Vids...`);
-
-    // 1. Klik tombol '+ Tambahkan' atau 'Bahan'
-    const addBtn = findBahanOrAddButton();
-    if (addBtn) {
-      simulateClick(addBtn);
-      try { await trustedClick(addBtn, taskId, 'Klik Tambah Gambar'); } catch (_) {}
+    for (const { file, tag } of files) {
+      const addBtn = await waitFor(findBahanOrAddButton, 15000, 250, 'tombol Bahan / Tambahkan');
+      try { await trustedClick(addBtn, taskId, 'Klik Tambah Gambar'); }
+      catch (_) { simulateClick(addBtn); }
       await new Promise(r => setTimeout(r, 500));
-
       const uploadItem = findUploadMenuItem();
-      if (uploadItem) {
-        simulateClick(uploadItem);
-        try { await trustedClick(uploadItem, taskId, 'Pilih Upload File'); } catch (_) {}
-        await new Promise(r => setTimeout(r, 500));
+      const fileInput = Array.from(document.querySelectorAll('input[type="file"]')).find(input => !input.disabled && (!input.accept || input.accept.includes('image'))) || null;
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      if (fileInput) {
+        fileInput.files = dt.files;
+        fileInput.dispatchEvent(new Event('input', { bubbles: true }));
+        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+      } else {
+        const dropTarget = uploadItem || addBtn;
+        dropTarget.dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true }));
+        dropTarget.dispatchEvent(new DragEvent('dragover', { dataTransfer: dt, bubbles: true }));
+        dropTarget.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }));
       }
+      await waitFor(() => hasReferenceTag(tag), 60000, 500, 'referensi @' + tag + ' selesai diunggah');
     }
+  }
 
-    // 2. Injeksi berkas gambar ke input[type="file"]
-    const fileInputs = Array.from(document.querySelectorAll('input[type="file"]'));
-    if (fileInputs.length > 0) {
-      const dt = new DataTransfer();
-      files.forEach(f => dt.items.add(f));
-      for (const input of fileInputs) {
-        try {
-          input.files = dt.files;
-          input.dispatchEvent(new Event('change', { bubbles: true }));
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-        } catch (_) {}
-      }
-    }
-
-    // 3. Drag & Drop ke promptBox
-    try {
-      const dropTarget = document.querySelector('[role="textbox"]') || promptBox;
-      const dt = new DataTransfer();
-      files.forEach(f => dt.items.add(f));
-      dropTarget.dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true }));
-      dropTarget.dispatchEvent(new DragEvent('dragover', { dataTransfer: dt, bubbles: true }));
-      dropTarget.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }));
-    } catch (_) {}
-
-    // 4. Paste ke promptBox
-    try {
-      const dt = new DataTransfer();
-      files.forEach(f => dt.items.add(f));
-      promptBox.dispatchEvent(new ClipboardEvent('paste', {
-        clipboardData: dt,
-        bubbles: true,
-        cancelable: true
-      }));
-    } catch (_) {}
-
-    // Beri jeda agar Google Vids selesai memproses thumbnail chip (@Gambar1, @Gambar2)
-    await new Promise(r => setTimeout(r, 2000));
+  function hasReferenceTag(tagLabel) {
+    const expected = String(tagLabel).replace(/^@/, '').toLowerCase();
+    return Array.from(document.querySelectorAll('[aria-label], [data-tooltip], [role="button"], [role="option"], span')).some(el => {
+      if (!isVisible(el)) return false;
+      const text = (el.textContent || '').trim().toLowerCase();
+      const aria = (el.getAttribute('aria-label') || '').trim().toLowerCase();
+      const tooltip = (el.getAttribute('data-tooltip') || '').trim().toLowerCase();
+      return text === expected || text === '@' + expected || aria.includes(expected) || tooltip.includes(expected);
+    });
   }
 
   function findBahanOrAddButton() {

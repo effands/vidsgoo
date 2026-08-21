@@ -51,7 +51,8 @@ test('server /api/queue/add supports affiliate mode with up to 3 image attachmen
       images: [
         { type: 'avatar', tag: '@Gambar1', name: 'avatar_person.jpg', dataUrl: 'data:image/jpeg;base64,123' },
         { type: 'product', tag: '@Gambar2', name: 'marshall_front.jpg', dataUrl: 'data:image/jpeg;base64,456' },
-        { type: 'product_detail', tag: '@Gambar3', name: 'marshall_side.jpg', dataUrl: 'data:image/jpeg;base64,789' }
+        { type: 'product_detail', tag: '@Gambar3', name: 'marshall_side.jpg', dataUrl: 'data:image/jpeg;base64,789' },
+        { type: 'ignored', tag: '@Gambar4', name: 'ignored.jpg', dataUrl: 'data:image/jpeg;base64,000' }
       ]
     };
 

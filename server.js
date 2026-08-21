@@ -507,7 +507,7 @@ app.post('/api/queue/add', requireDashboardOrigin, (req, res) => {
 
   const promptList = parsePromptBlocks(prompts);
   const sanitizedFolder = String(folder || '').replace(/[<>:"/\\|?*\x00-\x1F]/g, '').trim();
-  const safeImages = Array.isArray(images) ? images.slice(0, 10) : [];
+  const safeImages = Array.isArray(images) ? images.slice(0, 3) : [];
   
   promptList.forEach((pText, index) => {
     taskQueue.push({
