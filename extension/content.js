@@ -26,41 +26,98 @@
   async function runDirectAutomation({ prompt, ratio, taskId, folder }) {
     activeTaskId = taskId;
     cancelledTasks.delete(taskId);
-    const findVisiblePromptBox = () => Array.from(
-      document.querySelectorAll('[role="textbox"][aria-label^="Deskripsikan video Anda"]')
-    ).find(isVisible);
-    const existingPromptBox = findVisiblePromptBox();
-    if (!existingPromptBox) {
-      const videoAiButton = await waitFor(() => findButton(button => {
-        const text = button.textContent.trim();
-        return isVisible(button) && (button.getAttribute('aria-label') === 'Buat klip video AI' ||
-          text === 'Video AI' || text.startsWith('Buat video AI'));
-      }), 30000, 250, 'tombol Video AI');
-      videoAiButton.click();
+
+    let promptBox = findVisiblePromptBox();
+    if (!promptBox) {
+      const videoAiButton = await waitFor(findVideoAiButton, 30000, 250, 'tombol Video AI pada panel kanan');
+      simulateClick(videoAiButton);
+      try {
+        await trustedClick(videoAiButton, taskId, 'Membuka Panel Video AI');
+      } catch (_) {}
+      
+      promptBox = await waitFor(findVisiblePromptBox, 30000, 250, 'kotak prompt Google Vids');
     }
 
-    const promptBox = await waitFor(findVisiblePromptBox, 30000, 250, 'kotak prompt Google Vids');
     setPrompt(promptBox, prompt);
     selectRatio(ratio);
 
     const expandButton = findButton(button =>
       isVisible(button) && button.getAttribute('aria-label') === 'Luaskan'
     );
-    if (expandButton) await trustedClick(expandButton, taskId, 'Submitting');
+    if (expandButton) {
+      simulateClick(expandButton);
+      try { await trustedClick(expandButton, taskId, 'Submitting'); } catch (_) {}
+    }
 
-    const createButton = await waitFor(() => Array.from(document.querySelectorAll('button')).find(button =>
+    const createButton = await waitFor(() => Array.from(document.querySelectorAll('button, [role="button"]')).find(button =>
       isVisible(button) &&
       !button.disabled &&
       button.getAttribute('role') !== 'tab' &&
-      (button.textContent.trim() === 'Buat' || button.getAttribute('aria-label') === 'Buat')
+      (button.textContent.trim() === 'Buat' || button.getAttribute('aria-label') === 'Buat' || button.getAttribute('data-tooltip') === 'Buat')
     ), 30000, 250, 'tombol Buat');
+
     const existingUrls = collectVideoUrls();
+    simulateClick(createButton);
     await trustedClick(createButton, taskId, 'Rendering');
 
     const videoUrl = await awaitVideoResult(existingUrls);
     const response = await chrome.runtime.sendMessage({ type: 'DOWNLOAD_VIDEO_FILE', videoUrl, taskId, folder: folder || '' });
     if (!response?.success) throw new Error(response?.error || 'Background gagal mengunduh video.');
     return { videoUrl, downloadId: response.downloadId };
+  }
+
+  function findVideoAiButton() {
+    const candidates = Array.from(document.querySelectorAll(
+      'button, [role="button"], [role="tab"], [role="menuitem"], div[tabindex], div[aria-label], span[aria-label], div, span'
+    ));
+    return candidates.find(el => {
+      if (!isVisible(el)) return false;
+      const aria = (el.getAttribute('aria-label') || '').toLowerCase();
+      const tooltip = (el.getAttribute('data-tooltip') || el.getAttribute('title') || '').toLowerCase();
+      const text = (el.textContent || '').trim().replace(/\s+/g, ' ').toLowerCase();
+
+      if (aria.includes('video ai') || aria.includes('buat klip video ai') || tooltip.includes('video ai')) {
+        return true;
+      }
+      if (text === 'video ai' || text.startsWith('video ai')) {
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 && rect.width < 250 && rect.height > 0 && rect.height < 250;
+      }
+      return false;
+    });
+  }
+
+  function findVisiblePromptBox() {
+    const inputs = Array.from(document.querySelectorAll(
+      '[role="textbox"], textarea, [contenteditable="true"], input[type="text"]'
+    ));
+    return inputs.find(el => {
+      if (!isVisible(el)) return false;
+      const aria = (el.getAttribute('aria-label') || '').toLowerCase();
+      const placeholder = (el.getAttribute('placeholder') || '').toLowerCase();
+      if (aria.includes('deskripsikan') || aria.includes('prompt') || placeholder.includes('deskripsikan') || placeholder.includes('prompt')) {
+        return true;
+      }
+      return el.getAttribute('role') === 'textbox' || el.hasAttribute('contenteditable');
+    });
+  }
+
+  function simulateClick(el) {
+    if (!el) return;
+    try { el.focus(); } catch (_) {}
+    const rect = el.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach(eventType => {
+      el.dispatchEvent(new MouseEvent(eventType, {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        clientX: x,
+        clientY: y
+      }));
+    });
+    try { el.click(); } catch (_) {}
   }
 
   function setPrompt(element, prompt) {
