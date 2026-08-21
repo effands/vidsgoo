@@ -1,0 +1,14 @@
+node_modules/
+user_data/
+downloads/*
+!downloads/.gitkeep
+output.mp4
+*.log
+.env
+.env.*
+.DS_Store
+Thumbs.db
+.superpowers/
+
+# Demo video is distributed as a GitHub Release asset.
+VIDS GOO.mp4

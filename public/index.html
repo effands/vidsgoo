@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Vids Multi-Chrome Studio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root[data-theme="dark"] {
+      --bg-gradient: radial-gradient(circle at 15% 15%, #1e1b4b 0%, #0f172a 45%, #020617 100%);
+      --nebula-color1: rgba(168, 85, 247, 0.18);
+      --nebula-color2: rgba(56, 189, 248, 0.15);
+      --glass-bg: rgba(15, 23, 42, 0.65);
+      --glass-border: rgba(255, 255, 255, 0.12);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.4);
+      --card-inner: rgba(30, 41, 59, 0.5);
+      --input-bg: rgba(15, 23, 42, 0.8);
+      --log-bg: #0b0f19;
+      --log-text: #34d399;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --danger: #f87171;
+    }
+
+    :root[data-theme="light"] {
+      --bg-gradient: radial-gradient(circle at 15% 15%, #e0f2fe 0%, #f1f5f9 45%, #e2e8f0 100%);
+      --nebula-color1: rgba(192, 132, 252, 0.25);
+      --nebula-color2: rgba(56, 189, 248, 0.25);
+      --glass-bg: rgba(255, 255, 255, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.6);
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #0284c7;
+      --accent-glow: rgba(2, 132, 199, 0.25);
+      --card-inner: rgba(241, 245, 249, 0.8);
+      --input-bg: rgba(255, 255, 255, 0.9);
+      --log-bg: #f1f5f9;
+      --log-text: #047857;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s, border-color 0.3s, color 0.3s; }
+    
+    body {
+      background: var(--bg-gradient);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Animated Cosmic Nebula Backdrop */
+    body::before {
+      content: "";
+      position: fixed;
+      top: -20%;
+      left: -10%;
+      width: 600px;
+      height: 600px;
+      background: var(--nebula-color1);
+      filter: blur(120px);
+      border-radius: 50%;
+      z-index: -1;
+      animation: nebulaPulse 12s infinite alternate ease-in-out;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      bottom: -20%;
+      right: -10%;
+      width: 700px;
+      height: 700px;
+      background: var(--nebula-color2);
+      filter: blur(140px);
+      border-radius: 50%;
+      z-index: -1;
+      animation: nebulaPulse 15s infinite alternate-reverse ease-in-out;
+    }
+
+    @keyframes nebulaPulse {
+      0% { transform: scale(1) translate(0, 0); }
+      100% { transform: scale(1.25) translate(40px, -30px); }
+    }
+
+    .top-bar {
+      max-width: 1400px;
+      margin: 0 auto 24px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+
+    .brand h1 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, var(--text), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .theme-toggle {
+      background: var(--card-inner);
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      backdrop-filter: blur(8px);
+    }
+
+    .theme-toggle:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
+    }
+
+    .glass-card h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 18px;
+      color: var(--text);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 0.825rem; font-weight: 700; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    input, textarea, select {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 0.9rem;
+      backdrop-filter: blur(4px);
+    }
+
+    textarea { min-height: 120px; resize: vertical; }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 12px var(--accent-glow); }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #38bdf8, #0284c7);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      box-shadow: 0 4px 20px var(--accent-glow);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px var(--accent-glow);
+    }
+
+    .batch-card { padding: 0; overflow: hidden; }
+    .batch-head {
+      display: flex; justify-content: space-between; gap: 24px; align-items: flex-start;
+      padding: 24px 26px 18px; border-bottom: 1px solid var(--glass-border);
+    }
+    .batch-head h2 { margin: 0 0 6px; font-size: 1.2rem; letter-spacing: -0.025em; }
+    .batch-head p { color: var(--muted); font-size: .82rem; line-height: 1.55; max-width: 58ch; }
+    .batch-step {
+      flex: 0 0 auto; padding: 6px 9px; border: 1px solid var(--glass-border);
+      border-radius: 7px; color: var(--accent); font-size: .72rem; font-weight: 800;
+      letter-spacing: .08em; text-transform: uppercase; background: var(--card-inner);
+    }
+    .batch-body { padding: 20px 26px 26px; }
+    .batch-options { display: grid; grid-template-columns: minmax(0, .72fr) minmax(0, 1.28fr); gap: 14px; }
+    .batch-options .form-group { margin-bottom: 14px; }
+    .prompt-shell {
+      display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 12px;
+      padding: 8px; background: var(--input-bg); border: 1px solid var(--glass-border);
+      border-radius: 14px; transition: border-color .2s, box-shadow .2s;
+    }
+    .prompt-shell:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .prompt-shell textarea {
+      min-height: 190px; padding: 14px; border: 0; border-radius: 9px; background: transparent;
+      box-shadow: none; line-height: 1.65;
+    }
+    .prompt-shell textarea:focus { box-shadow: none; }
+    .prompt-guide {
+      padding: 14px; border-radius: 9px; background: var(--card-inner); color: var(--muted);
+      font-size: .76rem; line-height: 1.55;
+    }
+    .prompt-guide strong { display: block; color: var(--text); font-size: .83rem; margin-bottom: 8px; }
+    .prompt-guide kbd {
+      display: inline-block; padding: 2px 6px; margin: 2px; border: 1px solid var(--glass-border);
+      border-bottom-width: 2px; border-radius: 5px; color: var(--text); background: var(--input-bg);
+      font: 700 .7rem 'Plus Jakarta Sans', sans-serif;
+    }
+    .batch-submit { margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .batch-footnote { margin-top: 9px; text-align: center; color: var(--muted); font-size: .72rem; }
+
+    .btn-sm { padding: 6px 14px; font-size: 0.8rem; border-radius: 8px; width: auto; }
+
+    .chrome-list { display: flex; flex-direction: column; gap: 12px; }
+    .chrome-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--card-inner);
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+    }
+
+    .badge { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+    .badge-online { background: rgba(74, 222, 128, 0.15); color: var(--success); border: 1px solid rgba(74, 222, 128, 0.3); }
+    .badge-offline { background: rgba(248, 113, 113, 0.15); color: var(--danger); border: 1px solid rgba(248, 113, 113, 0.3); }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.875rem; }
+    th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--glass-border); }
+    th { color: var(--muted); font-weight: 700; background: var(--card-inner); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }
+
+    .status-Pending { color: var(--warning); font-weight: 600; }
+    .status-Processing { color: var(--accent); font-weight: 700; animation: pulseText 1.5s infinite alternate; }
+    .status-Completed { color: var(--success); font-weight: 600; }
+    .status-Failed { color: var(--danger); font-weight: 600; }
+
+    @keyframes pulseText { 0% { opacity: 0.6; } 100% { opacity: 1; } }
+
+    .log-box {
+      background: var(--input-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      padding: 8px;
+      color: var(--text);
+      height: 280px;
+      overflow-y: auto;
+    }
+    .log-entry {
+      display: grid; grid-template-columns: 82px 96px minmax(0, 1fr); gap: 10px;
+      align-items: start; padding: 10px 12px; border-radius: 9px;
+      border-bottom: 1px solid var(--glass-border); font-size: .78rem; line-height: 1.5;
+    }
+    .log-entry:last-child { border-bottom: 0; }
+    .log-entry:hover { background: var(--card-inner); }
+    .log-time { color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+    .log-status {
+      display: inline-flex; justify-content: center; padding: 3px 7px; border-radius: 6px;
+      font-size: .65rem; font-weight: 800; letter-spacing: .045em; text-transform: uppercase;
+      color: var(--muted); background: var(--card-inner); white-space: nowrap;
+    }
+    .log-status.info { color: var(--accent); background: rgba(56, 189, 248, .12); }
+    .log-status.success { color: var(--success); background: rgba(74, 222, 128, .12); }
+    .log-status.warning { color: var(--warning); background: rgba(251, 191, 36, .12); }
+    .log-status.danger { color: var(--danger); background: rgba(248, 113, 113, .12); }
+    .log-message { color: var(--text); overflow-wrap: anywhere; }
+    .log-empty { display: grid; place-items: center; height: 100%; color: var(--muted); font-size: .82rem; }
+    @media (max-width: 640px) {
+      .log-entry { grid-template-columns: 70px 1fr; }
+      .log-message { grid-column: 1 / -1; }
+    }
+
+    /* Fully Responsive Media Queries */
+    @media (max-width: 1024px) {
+      .layout {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      body {
+        padding: 16px;
+      }
+      .top-bar {
+        padding: 14px 18px;
+      }
+      .prompt-shell { grid-template-columns: 1fr; }
+      .prompt-guide { display: none; }
+    }
+
+    @media (max-width: 640px) {
+      .batch-head { padding: 20px; }
+      .batch-body { padding: 16px 20px 22px; }
+      .batch-options { grid-template-columns: 1fr; gap: 0; }
+    }
+
+    /* Toast Notification System */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      padding: 14px 20px;
+      border-radius: 14px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1), toastOut 0.3s ease forwards 2.7s;
+      pointer-events: auto;
+    }
+
+    .dialog-backdrop {
+      position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center;
+      padding: 20px; background: rgba(2, 6, 23, .68); backdrop-filter: blur(8px);
+      opacity: 0; visibility: hidden; transition: opacity .18s ease, visibility .18s ease;
+    }
+    .dialog-backdrop.is-open { opacity: 1; visibility: visible; }
+    .dialog-panel {
+      width: min(430px, 100%); padding: 24px; border: 1px solid var(--glass-border);
+      border-radius: 18px; background: var(--glass-bg); color: var(--text);
+      box-shadow: 0 28px 80px rgba(2, 6, 23, .42); transform: translateY(10px) scale(.98);
+      transition: transform .2s ease;
+    }
+    .dialog-backdrop.is-open .dialog-panel { transform: none; }
+    .dialog-icon {
+      width: 44px; height: 44px; display: grid; place-items: center; margin-bottom: 16px;
+      border-radius: 12px; color: var(--danger); background: rgba(248, 113, 113, .12); font-size: 1.25rem;
+    }
+    .dialog-panel h3 { font-size: 1.08rem; letter-spacing: -.02em; margin-bottom: 8px; }
+    .dialog-panel p { color: var(--muted); font-size: .86rem; line-height: 1.6; overflow-wrap: anywhere; }
+    .dialog-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 22px; }
+    .dialog-button {
+      padding: 11px 14px; border-radius: 10px; border: 1px solid var(--glass-border);
+      background: var(--card-inner); color: var(--text); font-weight: 700; cursor: pointer;
+    }
+    .dialog-button:hover { border-color: var(--accent); }
+    .dialog-button.danger { border-color: transparent; background: #dc2626; color: white; }
+    .dialog-button:focus-visible { outline: 3px solid var(--accent-glow); outline-offset: 2px; }
+
+    @keyframes toastIn {
+      from { transform: translateY(100%) scale(0.9); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    @keyframes toastOut {
+      from { transform: translateY(0) scale(1); opacity: 1; }
+      to { transform: translateY(20px) scale(0.95); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header Navigation Bar -->
+<div class="top-bar">
+  <div class="brand">
+    <div class="brand-icon">🎬</div>
+    <h1>Google Vids Multi-Chrome Studio</h1>
+  </div>
+  <button id="themeToggle" class="theme-toggle">
+    <span id="themeIcon">🌙</span> <span id="themeText">Tema Gelap</span>
+  </button>
+</div>
+
+<div class="layout">
+  <!-- Left Control Panel -->
+  <div class="sidebar">
+    <div class="glass-card">
+      <h2 style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <span>🧩 Chrome Add-ons Agents</span>
+        <span id="chromeOnlineBadge" class="badge badge-offline">0 Online</span>
+      </h2>
+      <div id="chromeList" class="chrome-list">
+        <div style="color: var(--muted); font-size: 0.85rem;">Menunggu Chrome Extension terhubung...</div>
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <h2>💡 Auto-Connect Chrome</h2>
+      <p style="font-size: 0.825rem; color: var(--muted); line-height: 1.6;">
+        Setiap browser Chrome yang terpasang <strong>Google Vids AI Helper Add-ons</strong> akan <strong>otomatis terhubung</strong> & muncul secara otomatis di daftar atas!
+      </p>
+    </div>
+  </div>
+
+  <!-- Right Main Panel -->
+  <div class="main">
+    <div class="glass-card batch-card">
+      <div class="batch-head">
+        <div>
+          <h2>Batch video baru</h2>
+          <p>Atur tujuan, tulis adegan, lalu biarkan Chrome yang tersedia mengerjakan antreannya.</p>
+        </div>
+        <span class="batch-step">Buat antrean</span>
+      </div>
+      <div class="batch-body">
+      <form id="queueForm">
+        <div class="form-group" style="display: none;">
+          <label>URL Google Vids Target (Opsional)</label>
+          <input type="text" id="targetUrl" placeholder="Kosongkan untuk Auto Detect Tab Google Vids di masing-masing Chrome">
+        </div>
+
+        <div class="batch-options">
+          <div class="form-group">
+            <label>Rasio Video (Aspect Ratio)</label>
+            <select id="ratio">
+              <option value="16:9">16:9 (Lanskap)</option>
+              <option value="9:16">9:16 (Potret)</option>
+              <option value="1:1">1:1 (Persegi)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Pilih Chrome Eksekutor</label>
+            <select id="targetChrome">
+              <option value="auto">🔄 Auto Switch (Pilih Chrome Online Secara Otomatis)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="prompts">Prompt video</label>
+          <div class="prompt-shell">
+            <textarea id="prompts" placeholder="Embun pagi menyelimuti sungai, kamera bergerak perlahan mengikuti arus.&#10;&#10;Perahu kayu melintas saat matahari terbit, suasana tenang dan sinematik." required></textarea>
+            <aside class="prompt-guide">
+              <strong>Satu blok = satu video</strong>
+              Tulis prompt sepanjang beberapa baris. Untuk membuat video berikutnya, sisakan satu baris kosong:
+              <div style="margin-top:10px;"><kbd>Enter</kbd> + <kbd>Enter</kbd></div>
+            </aside>
+          </div>
+        </div>
+
+        <button type="submit" class="btn batch-submit"><span>Masukkan ke antrean</span><span aria-hidden="true">→</span></button>
+        <div class="batch-footnote">Chrome online dipilih otomatis bila eksekutor disetel ke Auto Switch.</div>
+      </form>
+      </div>
+    </div>
+
+    <!-- Queue Status Table -->
+    <div class="glass-card">
+      <h2 style="display: flex; justify-content: space-between; align-items: center;">
+        <span>📋 Status Antrean Task (<strong id="queueCount" style="color: var(--accent);">0</strong>)</span>
+        <div style="display:flex;gap:8px;">
+          <button id="stopResetBtn" class="btn btn-sm" style="background:#b91c1c;">⏹ Stop &amp; Reset</button>
+          <button id="clearQueueBtn" class="btn btn-sm" style="background:var(--card-inner);border:1px solid var(--glass-border);color:var(--text);">🗑️ Bersihkan</button>
+        </div>
+      </h2>
+      <div style="overflow-x: auto; width: 100%;">
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Prompt</th>
+              <th>Ratio</th>
+              <th>Status</th>
+              <th>Waktu</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="queueTable">
+            <tr><td colspan="6" style="text-align: center; color: var(--muted);">Belum ada antrean task</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Video Gallery Card -->
+    <div class="glass-card">
+      <h2 style="display: flex; justify-content: space-between; align-items: center;">
+        <span>🎬 Galeri Hasil Video Downloaded</span>
+        <div style="display:flex; gap:8px;">
+          <button id="refreshGalleryBtn" class="btn btn-sm">🔄 Refresh</button>
+          <button id="clearGalleryBtn" class="btn btn-sm" style="background:linear-gradient(135deg,#ef4444,#dc2626);">🗑️ Hapus Semua</button>
+        </div>
+      </h2>
+      <div id="galleryGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 14px;">
+        <div style="color: var(--muted); font-size: 0.85rem;">Belum ada video downloaded. Hasil video yang selesai didownload akan muncul di sini.</div>
+      </div>
+    </div>
+
+    <!-- Live Logs -->
+    <div class="glass-card">
+      <h2><span>Aktivitas otomatisasi</span><span class="batch-step">Live</span></h2>
+      <div id="logBox" class="log-box">
+        <div class="log-empty">Menunggu aktivitas baru…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Theme Switching Logic (Dark / Light Mode)
+  const themeToggle = document.getElementById('themeToggle');
+  const themeIcon = document.getElementById('themeIcon');
+  const themeText = document.getElementById('themeText');
+
+  const currentTheme = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  updateThemeUI(currentTheme);
+
+  themeToggle.addEventListener('click', () => {
+    const activeTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = activeTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateThemeUI(newTheme);
+  });
+
+  function updateThemeUI(theme) {
+    if (theme === 'dark') {
+      themeIcon.textContent = '🌙';
+      themeText.textContent = 'Tema Gelap';
+    } else {
+      themeIcon.textContent = '☀️';
+      themeText.textContent = 'Tema Terang';
+    }
+  }
+
+  async function fetchChromes() {
+    const res = await fetch('/api/chromes');
+    const instances = await res.json();
+    
+    const chromeListDiv = document.getElementById('chromeList');
+    const targetChromeSelect = document.getElementById('targetChrome');
+    const chromeOnlineBadge = document.getElementById('chromeOnlineBadge');
+    
+    chromeListDiv.innerHTML = '';
+    targetChromeSelect.innerHTML = '<option value="auto">🔄 Auto Switch (Pilih Chrome Online Secara Otomatis)</option>';
+
+    let onlineCount = 0;
+
+    if (instances.length === 0) {
+      chromeListDiv.innerHTML = '<div style="color: var(--muted); font-size: 0.85rem; padding: 8px 0;">Menunggu Chrome Extension terhubung...</div>';
+    } else {
+      instances.forEach(c => {
+        const isOnline = c.status === 'Online';
+        if (isOnline) onlineCount++;
+
+        const item = document.createElement('div');
+        item.className = 'chrome-item';
+        item.innerHTML = `
+          <div>
+            <strong>${escapeHtml(c.name)}</strong><br>
+            <span style="color: var(--muted); font-size: 0.75rem;">Type: ${escapeHtml(c.port)}</span>
+          </div>
+          <span class="badge ${isOnline ? 'badge-online' : 'badge-offline'}">${escapeHtml(c.status)}</span>
+        `;
+        chromeListDiv.appendChild(item);
+
+        if (isOnline) {
+          const opt = document.createElement('option');
+          opt.value = c.id || c.port;
+          opt.textContent = `🎯 Standby: ${c.name}`;
+          targetChromeSelect.appendChild(opt);
+        }
+      });
+    }
+
+    if (chromeOnlineBadge) {
+      chromeOnlineBadge.textContent = `${onlineCount} Chrome Online`;
+      if (onlineCount > 0) {
+        chromeOnlineBadge.className = 'badge badge-online';
+      } else {
+        chromeOnlineBadge.className = 'badge badge-offline';
+      }
+    }
+  }
+</script>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="toast-container"></div>
+<div id="confirmDialog" class="dialog-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
+  <div class="dialog-panel">
+    <div class="dialog-icon" aria-hidden="true">🗑</div>
+    <h3 id="confirmTitle">Konfirmasi tindakan</h3>
+    <p id="confirmMessage"></p>
+    <div class="dialog-actions">
+      <button id="confirmCancel" class="dialog-button" type="button">Batal</button>
+      <button id="confirmAccept" class="dialog-button danger" type="button">Ya, lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showToast(message, icon = '✨') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    const iconSpan = document.createElement('span');
+    const messageSpan = document.createElement('span');
+    iconSpan.textContent = icon;
+    messageSpan.textContent = message;
+    toast.appendChild(iconSpan);
+    toast.appendChild(messageSpan);
+    container.appendChild(toast);
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 3000);
+  }
+
+  function showConfirm(message, title = 'Konfirmasi tindakan') {
+    const dialog = document.getElementById('confirmDialog');
+    const titleNode = document.getElementById('confirmTitle');
+    const messageNode = document.getElementById('confirmMessage');
+    const cancelButton = document.getElementById('confirmCancel');
+    const acceptButton = document.getElementById('confirmAccept');
+    titleNode.textContent = title;
+    messageNode.textContent = message;
+    dialog.classList.add('is-open');
+    acceptButton.focus();
+    return new Promise(resolve => {
+      const finish = answer => {
+        dialog.classList.remove('is-open');
+        cancelButton.removeEventListener('click', cancel);
+        acceptButton.removeEventListener('click', accept);
+        dialog.removeEventListener('click', backdrop);
+        document.removeEventListener('keydown', keyboard);
+        resolve(answer);
+      };
+      const cancel = () => finish(false);
+      const accept = () => finish(true);
+      const backdrop = event => { if (event.target === dialog) cancel(); };
+      const keyboard = event => { if (event.key === 'Escape') cancel(); };
+      cancelButton.addEventListener('click', cancel);
+      acceptButton.addEventListener('click', accept);
+      dialog.addEventListener('click', backdrop);
+      document.addEventListener('keydown', keyboard);
+    });
+  }
+
+  let currentQueueData = [];
+  let lastGallerySignature = null;
+  let deleteTokenPromise = null;
+
+  function escapeHtml(str) {
+    return String(str ?? '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  }
+
+  function galleryVideoKey(video) {
+    return encodeURIComponent(`${String(video.source ?? '')}\u0000${String(video.filename ?? '')}`);
+  }
+
+  function renderLogs(logs) {
+    const logBox = document.getElementById('logBox');
+    logBox.textContent = '';
+    if (!logs.length) {
+      const empty = document.createElement('div');
+      empty.className = 'log-empty';
+      empty.textContent = 'Menunggu aktivitas baru…';
+      logBox.appendChild(empty);
+      return;
+    }
+    logs.forEach(rawLog => {
+      const raw = String(rawLog ?? '');
+      const timeMatch = raw.match(/^\[([^\]]+)\]\s*/);
+      const withoutTime = raw.replace(/^\[[^\]]+\]\s*/, '');
+      const statusMatch = withoutTime.match(/(?:^|\s)(ASSIGNED|SUBMITTING|RENDERING|DOWNLOADING|COMPLETED|FAILED|RETRY)(?:\s|\||$)/i);
+      const status = statusMatch ? statusMatch[1].toUpperCase() : /menunggu|antrean/i.test(withoutTime) ? 'MENUNGGU' : 'INFO';
+      const tone = status === 'COMPLETED' ? 'success' : status === 'FAILED' ? 'danger' : /RETRY|MENUNGGU/.test(status) ? 'warning' : 'info';
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      const time = document.createElement('time');
+      time.className = 'log-time';
+      time.textContent = timeMatch?.[1] || '—';
+      const badge = document.createElement('span');
+      badge.className = `log-status ${tone}`;
+      badge.textContent = status;
+      const message = document.createElement('div');
+      message.className = 'log-message';
+      message.textContent = withoutTime.replace(/^[^A-Za-z0-9À-ÿ]+/, '').replace(new RegExp(`^${status}\\s*\\|?\\s*`, 'i'), '');
+      entry.appendChild(time);
+      entry.appendChild(badge);
+      entry.appendChild(message);
+      logBox.appendChild(entry);
+    });
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+
+  async function getDeleteToken() {
+    if (!deleteTokenPromise) {
+      deleteTokenPromise = fetch('/api/delete-token', {
+        headers: { 'X-Dashboard-Request': 'Google-Vids-Dashboard' }
+      }).then(async response => {
+        const data = await response.json();
+        if (!response.ok || !data.token) throw new Error(data.error || 'Token konfirmasi hapus tidak tersedia.');
+        return data.token;
+      }).catch(error => {
+        deleteTokenPromise = null;
+        throw error;
+      });
+    }
+    return deleteTokenPromise;
+  }
+
+  async function deleteRequestOptions() {
+    return {
+      method: 'DELETE',
+      headers: { 'X-Delete-Confirmation-Token': await getDeleteToken() }
+    };
+  }
+
+  window.copyPrompt = function(id) {
+    const task = currentQueueData.find(t => t.id === id);
+    if (task) {
+      navigator.clipboard.writeText(task.prompt);
+      showToast('Prompt berhasil disalin ke Clipboard!', '📋');
+    }
+  };
+
+  window.reusePrompt = function(id) {
+    const task = currentQueueData.find(t => t.id === id);
+    if (task) {
+      document.getElementById('prompts').value = task.prompt;
+      if (task.ratio) document.getElementById('ratio').value = task.ratio;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      showToast('Prompt dimuat ke kolom input!', '🔄');
+    }
+  };
+
+  async function fetchStatus() {
+    const res = await fetch('/api/status');
+    const data = await res.json();
+
+    currentQueueData = data.queue || [];
+    document.getElementById('queueCount').textContent = data.queue.length;
+
+    const tbody = document.getElementById('queueTable');
+    if (data.queue.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--muted);">Belum ada antrean task</td></tr>';
+    } else {
+      tbody.innerHTML = data.queue.map((t, idx) => `
+        <tr>
+          <td>${idx + 1}</td>
+          <td style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(t.prompt)}">${escapeHtml(t.prompt)}</td>
+          <td>${escapeHtml(t.ratio)}</td>
+          <td class="status-${escapeHtml(String(t.status ?? '').split(' ')[0])}">${escapeHtml(t.status)}</td>
+          <td>${escapeHtml(t.createdAt)}</td>
+          <td>
+            <div style="display: flex; gap: 6px;">
+              <button data-task-action="copy" data-task-id="${encodeURIComponent(String(t.id ?? ''))}" class="btn btn-sm" style="background: var(--card-inner); border: 1px solid var(--glass-border); color: var(--text); padding: 4px 8px;" title="Salin Prompt ke Clipboard">📋 Salin</button>
+              <button data-task-action="reuse" data-task-id="${encodeURIComponent(String(t.id ?? ''))}" class="btn btn-sm" style="padding: 4px 8px;" title="Isi ke Kolom Input & Gunakan Lagi">🔄 Gunakan Lagi</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    renderLogs(data.logs || []);
+  }
+
+  document.getElementById('queueTable').addEventListener('click', event => {
+    const button = event.target.closest('[data-task-action]');
+    if (!button) return;
+    const taskId = decodeURIComponent(button.dataset.taskId);
+    if (button.dataset.taskAction === 'copy') window.copyPrompt(taskId);
+    if (button.dataset.taskAction === 'reuse') window.reusePrompt(taskId);
+  });
+
+  const addPortBtn = document.getElementById('addPortBtn');
+  if (addPortBtn) {
+    addPortBtn.addEventListener('click', async () => {
+      const portInput = document.getElementById('newPort');
+      const port = portInput?.value;
+      if (!port) return showToast('Masukkan nomor port.', '⚠️');
+
+      await fetch('/api/chromes/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: `Chrome Port ${port}`, port })
+      });
+      portInput.value = '';
+      fetchChromes();
+    });
+  }
+
+  document.getElementById('queueForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      url: document.getElementById('targetUrl').value,
+      ratio: document.getElementById('ratio').value,
+      targetChrome: document.getElementById('targetChrome').value,
+      prompts: document.getElementById('prompts').value
+    };
+
+    const res = await fetch('/api/queue/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('prompts').value = '';
+      fetchStatus();
+    }
+  });
+
+  document.getElementById('clearQueueBtn').addEventListener('click', async () => {
+    if (await showConfirm('Semua task dalam antrean akan dihapus.', 'Kosongkan antrean?')) {
+      await fetch('/api/queue/clear', { method: 'DELETE' });
+      fetchStatus();
+      showToast('Antrean sudah dikosongkan.', '✓');
+    }
+  });
+
+  document.getElementById('stopResetBtn').addEventListener('click', async () => {
+    if (!await showConfirm('Semua proses aktif dan task menunggu akan dibatalkan. Antrean dapat langsung digunakan kembali.', 'Stop dan reset semua proses?')) return;
+    const res = await fetch('/api/queue/stop-reset', {
+      method: 'POST',
+      headers: { 'X-Dashboard-Request': 'Google-Vids-Dashboard' }
+    });
+    const data = await res.json();
+    if (!res.ok) return showToast(data.error || 'Gagal menghentikan proses.', '⚠️');
+    showToast(`${data.cancelled} task dibatalkan.`, '⏹');
+    fetchStatus();
+  });
+
+  async function fetchGallery() {
+    try {
+      const res = await fetch('/api/gallery');
+      const videos = await res.json();
+      const galleryGrid = document.getElementById('galleryGrid');
+      const signature = JSON.stringify(videos);
+      if (signature === lastGallerySignature) return;
+      const playbackState = new Map(Array.from(galleryGrid.querySelectorAll('video[data-video-key]')).map(video => [
+        video.dataset.videoKey,
+        { currentTime: video.currentTime, wasPlaying: !video.paused }
+      ]));
+      lastGallerySignature = signature;
+
+      if (videos.length === 0) {
+        galleryGrid.innerHTML = '<div style="color: var(--muted); font-size: 0.85rem; grid-column: 1/-1;">Belum ada video downloaded. Hasil video yang selesai didownload akan muncul di sini.</div>';
+        return;
+      }
+
+      galleryGrid.innerHTML = videos.map(v => `
+        <div style="background: var(--card-inner); border: 1px solid var(--glass-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+          <video data-video-key="${galleryVideoKey(v)}" controls preload="metadata" playsinline style="width: 100%; border-radius: 8px; max-height: 180px; background: #000;" src="${escapeHtml(v.url)}"></video>
+          <div style="font-size: 0.8rem; font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${escapeHtml(v.filename)}</div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted);">
+            <span>💾 ${escapeHtml(v.sizeMB)} MB · ${escapeHtml(v.sourceLabel)}</span>
+            <span>🕒 ${escapeHtml(v.createdLabel)}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:4px;">
+            <a href="${escapeHtml(v.url)}" download="${escapeHtml(v.filename)}" class="btn btn-sm" style="text-align:center;text-decoration:none;display:block;">📥 Download</a>
+            <button class="btn btn-sm delete-video-btn" data-source="${escapeHtml(v.source)}" data-filename="${encodeURIComponent(String(v.filename ?? ''))}" style="background:linear-gradient(135deg,#ef4444,#dc2626);">🗑️ Hapus</button>
+          </div>
+        </div>
+      `).join('');
+
+      for (const video of galleryGrid.querySelectorAll('video[data-video-key]')) {
+        const previous = playbackState.get(video.dataset.videoKey);
+        if (!previous) continue;
+        const restoreTime = () => {
+          try { video.currentTime = previous.currentTime; } catch (_) {}
+        };
+        restoreTime();
+        if (typeof video.addEventListener === 'function') {
+          video.addEventListener('loadedmetadata', restoreTime, { once: true });
+        }
+        if (previous.wasPlaying) {
+          const playResult = video.play();
+          if (playResult && typeof playResult.catch === 'function') playResult.catch(() => {});
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  document.getElementById('refreshGalleryBtn').addEventListener('click', fetchGallery);
+
+  document.getElementById('galleryGrid').addEventListener('click', async (event) => {
+    const button = event.target.closest('.delete-video-btn');
+    if (!button) return;
+    const filename = decodeURIComponent(button.dataset.filename);
+    if (!await showConfirm(`Video “${filename}” akan dihapus permanen.`, 'Hapus video?')) return;
+    const res = await fetch(`/api/gallery/${encodeURIComponent(button.dataset.source)}/${encodeURIComponent(filename)}`, await deleteRequestOptions());
+    const data = await res.json();
+    if (!res.ok) return showToast(data.error || 'Gagal menghapus video.', '⚠️');
+    fetchGallery();
+    fetchStatus();
+    showToast('Video berhasil dihapus.', '✓');
+  });
+
+  document.getElementById('clearGalleryBtn').addEventListener('click', async () => {
+    if (!await showConfirm('Seluruh video valid di galeri akan dihapus permanen.', 'Hapus semua video?')) return;
+    const res = await fetch('/api/gallery', await deleteRequestOptions());
+    const data = await res.json();
+    if (!res.ok) return showToast(data.error || 'Gagal menghapus semua video.', '⚠️');
+    fetchGallery();
+    fetchStatus();
+    showToast('Semua video galeri berhasil dihapus.', '✓');
+  });
+
+  setInterval(fetchChromes, 4000);
+  setInterval(fetchStatus, 2000);
+  setInterval(fetchGallery, 5000);
+  fetchChromes();
+  fetchStatus();
+  fetchGallery();
+</script>
+</body>
+</html>

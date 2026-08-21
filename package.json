@@ -1,0 +1,21 @@
+{
+  "name": "google-vids-bot",
+  "version": "1.0.0",
+  "description": "Dashboard dan ekstensi Chrome untuk otomasi batch Google Vids AI Generator",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "keywords": [
+    "google-vids",
+    "automation",
+    "chrome-extension",
+    "video-generation"
+  ],
+  "dependencies": {
+    "express": "^4.18.2",
+    "minimist": "^1.2.8",
+    "playwright": "^1.40.0"
+  }
+}

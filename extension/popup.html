@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      width: 350px;
+      padding: 16px;
+      background-color: #0b0f19;
+      color: #f8fafc;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #1e293b;
+    }
+    h2 {
+      font-size: 1.05rem;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-badge {
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 10px;
+      font-weight: 700;
+      background: #22c55e22;
+      color: #22c55e;
+      border: 1px solid #22c55e44;
+    }
+    .quick-links {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .link-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      color: #38bdf8;
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .link-btn:hover {
+      background: #38bdf8;
+      color: #0b0f19;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #94a3b8;
+    }
+    textarea, select {
+      width: 100%;
+      padding: 8px 10px;
+      background: #151d30;
+      border: 1px solid #23314d;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.85rem;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+    textarea:focus, select:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+    button.run-btn {
+      width: 100%;
+      padding: 10px;
+      background: #38bdf8;
+      border: none;
+      border-radius: 6px;
+      color: #0b0f19;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: 0.2s;
+    }
+    button.run-btn:hover {
+      background: #0284c7;
+      color: #fff;
+    }
+    .info-box {
+      margin-top: 12px;
+      padding: 10px;
+      background: #151d30;
+      border-radius: 6px;
+      border: 1px dashed #23314d;
+      font-size: 0.78rem;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+    #status {
+      margin-top: 10px;
+      font-size: 0.78rem;
+      color: #a7f3d0;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>🎬 Google Vids Helper <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 500;">v1.1</span></h2>
+    <span class="status-badge">⚡ Agent Connected</span>
+  </div>
+
+  <!-- Quick Action Links -->
+  <div class="quick-links">
+    <a href="#" id="openVidsCreateLink" class="link-btn">
+      ➕ Buka Google Vids Baru
+    </a>
+    <a href="#" id="openDashboardLink" class="link-btn">
+      🖥️ Web Dashboard (7890)
+    </a>
+  </div>
+
+  <div class="form-group">
+    <label for="genMode">Mode Generator AI</label>
+    <select id="genMode">
+      <option value="video">🎥 Generate Video AI</option>
+      <option value="voice">🎙️ Generate Voiceover AI</option>
+      <option value="image">🖼️ Generate Foto / Gambar AI</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="ratio">Aspect Ratio (Khusus Video)</label>
+    <select id="ratio">
+      <option value="16:9">16:9 (Lanskap)</option>
+      <option value="9:16">9:16 (Potret)</option>
+      <option value="1:1">1:1 (Persegi)</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="prompt">Prompt Video Instan</label>
+    <textarea id="prompt" placeholder="Ketik deskripsi video yang diinginkan...">A scenic overview of high mountains during morning light</textarea>
+  </div>
+
+  <button id="runBtn" class="run-btn">🚀 Generate Video di Tab Ini</button>
+
+  <div id="status">Buka Google Vids lalu klik Generate.</div>
+
+  <div class="info-box">
+    💡 <strong>Info:</strong> Extension ini terhubung otomatis dengan Server Dashboard (Port 7890). Anda bisa mengirim batch 10+ prompt langsung dari Dashboard!
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
