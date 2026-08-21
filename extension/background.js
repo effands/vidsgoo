@@ -107,7 +107,8 @@ async function sendAutomationMessage(tabId, payload) {
   try {
     return await chrome.tabs.sendMessage(tabId, payload);
   } catch (error) {
-    if (!String(error.message).includes('Receiving end does not exist')) throw error;
+    const disconnected = /Receiving end does not exist|message channel closed before a response was received/i.test(String(error.message));
+    if (!disconnected) throw error;
     await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] });
     await delay(300);
     return chrome.tabs.sendMessage(tabId, payload);
