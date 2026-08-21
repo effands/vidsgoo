@@ -1,24 +1,33 @@
 @echo off
-title Google Vids Generator Server Control
-color 0A
-cd /d "e:\AUTO KLIK\Vids Goo"
+chcp 65001 >nul
+title VIDS GOO - Multi-Chrome Studio Server
+color 0B
+cd /d "%~dp0"
+cls
 
-echo ===================================================
-echo   Google Vids Generator Web Server (Port 7890)
-echo ===================================================
+echo.
+echo   ██╗   ██╗██╗██████╗ ███████╗     ██████╗  ██████╗  ██████╗ 
+echo   ██║   ██║██║██╔══██╗██╔════╝    ██╔════╝ ██╔═══██╗██╔═══██╗
+echo   ██║   ██║██║██║  ██║███████╗    ██║  ███╗██║   ██║██║   ██║
+echo   ╚██╗ ██╔╝██║██║  ██║╚════██║    ██║   ██║██║   ██║██║   ██║
+echo    ╚████╔╝ ██║██████╔╝███████║    ╚██████╔╝╚██████╔╝╚██████╔╝
+echo     ╚═══╝  ╚═╝╚═════╝ ╚══════╝     ╚═════╝  ╚═════╝  ╚═════╝ 
+echo.
+echo   ===========================================================
+echo      GOOGLE VIDS AUTOMATION STUDIO - MULTI-CHROME FLEET
+echo   ===========================================================
 echo.
 
 :: Tutup otomatis proses lama jika port 7890 masih dipakai
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr :7890 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
 
-echo [STATUS] Membuka Web Dashboard di browser...
+echo   [+] Status   : Membuka Web Dashboard di browser...
 start http://127.0.0.1:7890
 
-echo.
-echo [PENTING] Jendela CMD ini adalah penopang server.
-echo Jika jendela ini ditutup (X), server akan OTOMATIS MATI.
-echo ===================================================
+echo   [+] Local UI : http://127.0.0.1:7890
+echo   [!] Penting  : Jendela ini adalah penopang server aktif.
+echo                  Jangan tutup jendela ini saat otomatisasi berjalan.
+echo   ===========================================================
 echo.
 node server.js
 pause
-
