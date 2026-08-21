@@ -23,7 +23,7 @@
     return true;
   });
 
-  async function runDirectAutomation({ prompt, ratio, taskId, folder }) {
+  async function runDirectAutomation({ prompt, ratio, taskId, folder, images, mode }) {
     activeTaskId = taskId;
     cancelledTasks.delete(taskId);
 
@@ -36,6 +36,11 @@
       } catch (_) {}
       
       promptBox = await waitFor(findVisiblePromptBox, 30000, 250, 'kotak prompt Google Vids');
+    }
+
+    // Unggah / lampirkan gambar (Avatar & Produk) jika tersedia pada antrean task
+    if (Array.isArray(images) && images.length > 0) {
+      await attachImagesToVids(images, promptBox, taskId);
     }
 
     setPrompt(promptBox, prompt);
@@ -64,6 +69,101 @@
     const response = await chrome.runtime.sendMessage({ type: 'DOWNLOAD_VIDEO_FILE', videoUrl, taskId, folder: folder || '' });
     if (!response?.success) throw new Error(response?.error || 'Background gagal mengunduh video.');
     return { videoUrl, downloadId: response.downloadId };
+  }
+
+  function dataUrlToFile(dataUrl, filename) {
+    if (!dataUrl || !dataUrl.includes(',')) return null;
+    const parts = dataUrl.split(',');
+    const mimeMatch = parts[0].match(/:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+    const binary = atob(parts[1]);
+    const array = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      array[i] = binary.charCodeAt(i);
+    }
+    return new File([array], filename || 'image.png', { type: mime });
+  }
+
+  async function attachImagesToVids(images, promptBox, taskId) {
+    const files = images
+      .map((img, idx) => dataUrlToFile(img.dataUrl, img.name || `gambar_${idx + 1}.png`))
+      .filter(Boolean);
+
+    if (!files.length) return;
+
+    // Klik tombol 'Bahan' atau '+ Tambahkan' jika ada kotak upload
+    const bahanButton = findBahanOrAddButton();
+    if (bahanButton) {
+      simulateClick(bahanButton);
+      try { await trustedClick(bahanButton, taskId, 'Klik Bahan Upload'); } catch (_) {}
+      await new Promise(r => setTimeout(r, 400));
+      
+      const uploadMenuItem = findUploadMenuItem();
+      if (uploadMenuItem) {
+        simulateClick(uploadMenuItem);
+        try { await trustedClick(uploadMenuItem, taskId, 'Pilih Upload File'); } catch (_) {}
+        await new Promise(r => setTimeout(r, 400));
+      }
+    }
+
+    // Injeksi via file input
+    const fileInputs = Array.from(document.querySelectorAll('input[type="file"]'));
+    if (fileInputs.length > 0) {
+      const dt = new DataTransfer();
+      files.forEach(f => dt.items.add(f));
+      for (const input of fileInputs) {
+        try {
+          input.files = dt.files;
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        } catch (_) {}
+      }
+    }
+
+    // Injeksi via Drag & Drop Event
+    try {
+      const dropTarget = document.querySelector('[role="textbox"]') || promptBox;
+      const dt = new DataTransfer();
+      files.forEach(f => dt.items.add(f));
+      dropTarget.dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true }));
+      dropTarget.dispatchEvent(new DragEvent('dragover', { dataTransfer: dt, bubbles: true }));
+      dropTarget.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }));
+    } catch (_) {}
+
+    // Injeksi via Paste Event
+    try {
+      const dt = new DataTransfer();
+      files.forEach(f => dt.items.add(f));
+      promptBox.dispatchEvent(new ClipboardEvent('paste', {
+        clipboardData: dt,
+        bubbles: true,
+        cancelable: true
+      }));
+    } catch (_) {}
+
+    await new Promise(r => setTimeout(r, 1500));
+  }
+
+  function findBahanOrAddButton() {
+    const candidates = Array.from(document.querySelectorAll('button, [role="button"], div[tabindex], div, span'));
+    return candidates.find(el => {
+      if (!isVisible(el)) return false;
+      const text = (el.textContent || '').trim().toLowerCase();
+      const aria = (el.getAttribute('aria-label') || '').toLowerCase();
+      const tooltip = (el.getAttribute('data-tooltip') || '').toLowerCase();
+      return text === 'bahan' || text === '+ tambahkan' || text === 'tambahkan' ||
+             aria.includes('tambahkan') || aria.includes('bahan') || tooltip.includes('bahan');
+    });
+  }
+
+  function findUploadMenuItem() {
+    const candidates = Array.from(document.querySelectorAll('button, [role="menuitem"], [role="button"], div, span'));
+    return candidates.find(el => {
+      if (!isVisible(el)) return false;
+      const text = (el.textContent || '').trim().toLowerCase();
+      const aria = (el.getAttribute('aria-label') || '').toLowerCase();
+      return text === 'upload' || text.startsWith('upload') || aria.includes('upload');
+    });
   }
 
   function findVideoAiButton() {
