@@ -285,7 +285,7 @@ function recoverStaleActiveTask() {
   isProcessing = false;
   activeTaskId = null;
   if (stalledAgent && activeExtensions.has(stalledAgent)) {
-    activeExtensions.get(stalledAgent).cooldownUntil = now + 120000;
+    activeExtensions.get(stalledAgent).cooldownUntil = now;
   }
   addLog(`🛟 AUTO RECOVERY | Task ${task.id} dilepas dari Agent ${stalledAgent || '-'} setelah stage macet`);
   setTimeout(processNextQueue, 500);
@@ -419,10 +419,10 @@ app.post('/api/extension/fail-task', (req, res) => {
   isProcessing = false;
   activeTaskId = null;
   if (extId && activeExtensions.has(extId)) {
-    activeExtensions.get(extId).cooldownUntil = Date.now() + 120000;
+    activeExtensions.get(extId).cooldownUntil = Date.now();
   }
   addLog(retryable
-    ? `↪️ RETRY | Task ${taskId || '-'} | Agent ${extId || 'extension'} cooldown 120 detik | ${error}`
+    ? `↪️ RETRY LANGSUNG | Task ${taskId || '-'} | Agent ${extId || 'extension'} | ${error}`
     : `❌ FAILED | Task ${taskId || '-'} | Agent ${extId || 'extension'} | ${error || 'Kesalahan tidak diketahui.'}`);
   setTimeout(processNextQueue, 500);
   res.json({ success: true, retryable });
@@ -597,4 +597,3 @@ function startServer(port = PORT) {
 if (require.main === module) startServer();
 
 module.exports = { app, startServer };
-

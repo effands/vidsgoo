@@ -182,10 +182,73 @@ function contentElement({ text = '', ariaLabel = null, onClick = null } = {}) {
   };
 }
 
-async function runContentAutomation() {
+function loadContentSelectorFunctions(elements) {
+  const document = {
+    querySelector() { return null; },
+    querySelectorAll() { return elements; }
+  };
+  const chrome = {
+    runtime: {
+      lastError: null,
+      onMessage: { addListener() {} },
+      sendMessage(_message, callback) { if (callback) callback({}); }
+    }
+  };
+  const exposedSource = contentSource.replace(
+    /\}\)\(\);\s*$/,
+    'globalThis.__selectors = { findBahanOrAddButton, findCreateModeButton: typeof findCreateModeButton === "function" ? findCreateModeButton : undefined, findCreateButton, findAiPromptBox }; })();'
+  );
+  const context = vm.createContext({ chrome, console, document, setInterval() {} });
+  vm.runInContext(exposedSource, context);
+  return context.__selectors;
+}
+
+test('affiliate upload selects the exact Bahan control instead of a broad container or Avatar', () => {
+  const broadContainer = contentElement({ text: 'Buat Avatar Bahan' });
+  broadContainer.getBoundingClientRect = () => ({ left: 0, top: 0, width: 600, height: 700 });
+  const avatarButton = contentElement({ text: 'Avatar' });
+  const bahanButton = contentElement({ text: 'Bahan' });
+  const selectors = loadContentSelectorFunctions([broadContainer, avatarButton, bahanButton]);
+
+  assert.equal(selectors.findBahanOrAddButton(), bahanButton);
+});
+
+test('affiliate upload selects the exact Buat tab before adding Bahan', () => {
+  const editTab = contentElement({ text: 'Edit' });
+  const buatTab = contentElement({ text: 'Buat' });
+  const selectors = loadContentSelectorFunctions([editTab, buatTab]);
+
+  assert.equal(selectors.findCreateModeButton(), buatTab);
+});
+
+test('generate selector never mistakes an empty circular Drive button for Buat', () => {
+  const moveButton = contentElement({ ariaLabel: 'Pindahkan' });
+  moveButton.getBoundingClientRect = () => ({ left: 10, top: 10, width: 40, height: 40 });
+  const generateButton = contentElement({ ariaLabel: 'Buat' });
+  generateButton.getBoundingClientRect = () => ({ left: 500, top: 500, width: 48, height: 48 });
+  const selectors = loadContentSelectorFunctions([moveButton, generateButton]);
+
+  assert.equal(selectors.findCreateButton(), generateButton);
+});
+
+test('prompt selector ignores canvas textboxes outside the Video AI panel', () => {
+  const canvasBox = contentElement({ ariaLabel: 'Deskripsikan video Anda' });
+  canvasBox.closest = () => null;
+  const aiBox = contentElement({ ariaLabel: 'Deskripsikan video Anda' });
+  aiBox.closest = () => ({ textContent: 'Buat' });
+  const selectors = loadContentSelectorFunctions([canvasBox, aiBox]);
+  assert.equal(selectors.findAiPromptBox(), aiBox);
+});
+
+async function runContentAutomation({ images = undefined, ratio = '16:9', mode = 'affiliate', ignoredVideoAiClicks = 0, ignoredRenderClicks = 0 } = {}) {
   let messageListener;
   let panelOpen = false;
+  let composerExpanded = false;
+  let uploadedReferenceCount = 0;
   let generated = false;
+  let renderRequests = 0;
+  let ratioMenuOpen = false;
+  let selectedRatio = '16:9';
   const sent = [];
   const oldVideo = {
     src: 'https://contribution-rt.usercontent.google.com/old-src.mp4',
@@ -198,21 +261,45 @@ async function runContentAutomation() {
     querySelectorAll() { return [{ src: 'https://contribution-rt.usercontent.google.com/fresh-source.mp4' }]; }
   };
   const promptBox = contentElement({ ariaLabel: 'Deskripsikan video Anda' });
-  const videoAiButton = contentElement({ text: 'Video AI', onClick() { panelOpen = true; } });
-  const createButton = contentElement({ text: 'Buat' });
+  promptBox.closest = () => ({ textContent: 'Buat' });
+  let videoAiClickCount = 0;
+  const videoAiButton = contentElement({ text: 'Video AI', onClick() {
+    videoAiClickCount += 1;
+    if (videoAiClickCount > ignoredVideoAiClicks) panelOpen = true;
+  } });
+  const createButton = contentElement({ text: 'Buat', onClick() {
+    renderRequests += 1;
+    if (renderRequests > ignoredRenderClicks) generated = true;
+  } });
+  const expandButton = contentElement({ ariaLabel: 'Luaskan', onClick() { composerExpanded = true; } });
+  const bahanButton = contentElement({ text: 'Bahan' });
+  const ratioButton = contentElement({ text: 'Lanskap' });
+  const landscapeOption = contentElement({ text: 'Lanskap 16:9' });
+  const portraitOption = contentElement({ text: 'Potret 9:16' });
+  const referenceTags = [contentElement({ text: 'Gambar1' }), contentElement({ text: 'Gambar2' }), contentElement({ text: 'Gambar3' })];
+  const fileInput = contentElement();
+  fileInput.accept = 'image/png';
+  fileInput.dispatchEvent = event => { if (event?.type === 'change') uploadedReferenceCount += 1; };
   const document = {
-    execCommand() {},
+    execCommand() { return true; },
+    createRange() { return { selectNodeContents() {} }; },
     querySelector(selector) {
       if (selector.startsWith('[role="textbox"]')) return panelOpen ? promptBox : null;
       return null;
     },
     querySelectorAll(selector) {
-      if (selector === 'button, [role="button"]') return panelOpen ? [createButton] : [videoAiButton];
-      if (selector === 'button') return panelOpen ? [createButton] : [];
+      if (selector.includes('[role="textbox"]')) return panelOpen ? [promptBox] : [];
+      if (selector === 'input[type="file"]') return composerExpanded ? [fileInput] : [];
       if (selector === 'video' || selector === 'video[src]') {
         if (!panelOpen) return [];
         return generated ? [oldVideo, freshVideo] : [oldVideo];
       }
+      if (selector.includes('button') || selector.includes('[role="button"]')) {
+        if (!panelOpen) return [videoAiButton];
+        ratioButton.textContent = selectedRatio === '9:16' ? 'Potret' : 'Lanskap';
+        return [createButton, expandButton, ...(composerExpanded ? [bahanButton, ratioButton] : []), ...(ratioMenuOpen ? [landscapeOption, portraitOption] : []), ...referenceTags.slice(0, uploadedReferenceCount)];
+      }
+      if (uploadedReferenceCount && (selector.includes('[aria-label]') || selector.includes('span'))) return referenceTags.slice(0, uploadedReferenceCount);
       return [];
     }
   };
@@ -223,7 +310,13 @@ async function runContentAutomation() {
       sendMessage(message, callback) {
         sent.push(message);
         if (message.type === 'TRUSTED_CLICK') {
-          if (message.stage === 'Rendering') generated = true;
+          if (message.stage?.startsWith('Membuka Panel Video AI')) videoAiButton.click();
+          if (message.stage === 'Membuka Form Buat') expandButton.click();
+          if (message.stage === 'Submitting') expandButton.click();
+          if (message.stage === 'Membuka Pilihan Rasio') ratioMenuOpen = true;
+          if (message.stage === 'Memilih Rasio 9:16') { selectedRatio = '9:16'; ratioMenuOpen = false; }
+          if (message.stage === 'Memilih Rasio 16:9') { selectedRatio = '16:9'; ratioMenuOpen = false; }
+          if (message.stage === 'Rendering') createButton.click();
           return Promise.resolve({ success: true });
         }
         if (message.type === 'DOWNLOAD_VIDEO_FILE') return Promise.resolve({ success: true, downloadId: 7 });
@@ -233,26 +326,114 @@ async function runContentAutomation() {
     }
   };
   let timerId = 0;
+  let fakeNow = 0;
+  const activeTimers = new Map();
+  const window = {
+    getSelection() { return { removeAllRanges() {}, addRange() {} }; }
+  };
+  class FakeEvent { constructor(type) { this.type = type; } }
   const context = vm.createContext({
     chrome,
     console,
     document,
-    InputEvent: class InputEvent {},
-    setInterval(callback) { const id = ++timerId; setImmediate(callback); return id; },
-    clearInterval() {}
+    window,
+    InputEvent: FakeEvent,
+    Event: FakeEvent,
+    PointerEvent: FakeEvent,
+    MouseEvent: FakeEvent,
+    KeyboardEvent: FakeEvent,
+    DataTransfer: class DataTransfer { constructor() { this.files = []; this.items = { add: file => this.files.push(file) }; } },
+    File: class File { constructor(parts, name, options) { this.parts = parts; this.name = name; this.type = options?.type; } },
+    atob,
+    Date: { now() { fakeNow += 1000; return fakeNow; } },
+    setTimeout,
+    setInterval(callback) {
+      const id = ++timerId;
+      if (id === 1) {
+        setImmediate(callback);
+        return id;
+      }
+      activeTimers.set(id, true);
+      const tick = () => {
+        if (!activeTimers.get(id)) return;
+        callback();
+        if (activeTimers.get(id)) setImmediate(tick);
+      };
+      setImmediate(tick);
+      return id;
+    },
+    clearInterval(id) { activeTimers.set(id, false); }
   });
   vm.runInContext(contentSource, context);
   const result = await new Promise(resolve => {
-    assert.equal(messageListener({ type: 'EXECUTE_VIDS_AUTOMATION', prompt: 'Prompt', ratio: '16:9', taskId: 'task_content' }, {}, resolve), true);
+    assert.equal(messageListener({ type: 'EXECUTE_VIDS_AUTOMATION', prompt: 'Prompt', ratio, taskId: 'task_content', images, mode }, {}, resolve), true);
   });
-  return { result, sent };
+  return { result, sent, renderRequests, videoAiClickCount };
 }
 
-test('the trusted generate click reports Rendering', async () => {
-  const { result, sent } = await runContentAutomation();
+test('affiliate image automation expands the Buat composer before selecting Bahan', async () => {
+  const { result, sent } = await runContentAutomation({
+    images: [{ name: 'produk.png', tag: '@Gambar1', dataUrl: 'data:image/png;base64,AA==' }]
+  });
+  assert.equal(result.success, true);
+  const stages = sent.filter(message => message.type === 'TRUSTED_CLICK').map(message => message.stage);
+  assert.ok(stages.indexOf('Membuka Form Buat') < stages.indexOf('Klik Tambah Gambar'));
+});
+
+test('Video AI is clicked again when the first click does not open the prompt', async () => {
+  const { result, videoAiClickCount } = await runContentAutomation({ ignoredVideoAiClicks: 1 });
+  assert.equal(result.success, true);
+  assert.equal(videoAiClickCount, 2);
+});
+
+test('Video AI opens with one direct click when the control responds normally', async () => {
+  const { result, videoAiClickCount } = await runContentAutomation();
+  assert.equal(result.success, true);
+  assert.equal(videoAiClickCount, 1);
+});
+
+test('affiliate image automation opens Bahan only once for multiple images', async () => {
+  const { result, sent } = await runContentAutomation({
+    images: [
+      { name: 'produk-1.png', tag: '@Gambar1', dataUrl: 'data:image/png;base64,AA==' },
+      { name: 'produk-2.png', tag: '@Gambar2', dataUrl: 'data:image/png;base64,AA==' }
+    ]
+  });
+  assert.equal(result.success, true);
+  const bahanClicks = sent.filter(message => message.type === 'TRUSTED_CLICK' && message.stage === 'Klik Tambah Gambar');
+  assert.equal(bahanClicks.length, 1, 'Bahan must not be clicked again after the first upload');
+});
+
+test('affiliate automation selects and confirms portrait ratio before Rendering', async () => {
+  const { result, sent } = await runContentAutomation({ ratio: '9:16' });
+  assert.equal(result.success, true);
+  const stages = sent.filter(message => message.type === 'TRUSTED_CLICK').map(message => message.stage);
+  assert.ok(stages.indexOf('Memilih Rasio 9:16') > stages.indexOf('Membuka Pilihan Rasio'));
+  assert.equal(result.success, true);
+});
+
+test('ordinary video mode skips affiliate Bahan but confirms ratio before Rendering', async () => {
+  const { result, sent, renderRequests } = await runContentAutomation({ mode: null, ratio: '9:16' });
+  assert.equal(result.success, true);
+  const stages = sent.filter(message => message.type === 'TRUSTED_CLICK').map(message => message.stage);
+  assert.equal(stages.includes('Pilih Mode Buat'), false);
+  assert.equal(stages.includes('Membuka Form Buat'), false);
+  assert.ok(stages.indexOf('Memilih Rasio 9:16') > stages.indexOf('Submitting'));
+  assert.equal(renderRequests, 1, 'ordinary mode must not double-click after the layout changes');
+});
+
+test('a responsive generate button is clicked exactly once', async () => {
+  const { result, sent, renderRequests } = await runContentAutomation();
   assert.equal(result.success, true);
   const generateClick = sent.find(message => message.type === 'TRUSTED_CLICK' && message.stage === 'Rendering');
-  assert.ok(generateClick, 'generate click must produce the Rendering stage');
+  assert.equal(generateClick, undefined, 'trusted fallback must not run when the direct click starts rendering');
+  assert.equal(renderRequests, 1, 'one task must trigger exactly one render');
+});
+
+test('generate is clicked again when Google Vids does not show render progress', async () => {
+  const { result, renderRequests } = await runContentAutomation({ ignoredRenderClicks: 1 });
+  assert.equal(result.success, true);
+  assert.equal(renderRequests, 2);
 });
 
 test('fresh-result baseline is captured after the panel opens and covers nested source URLs', async () => {

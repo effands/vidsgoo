@@ -31,7 +31,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ success: false, error: 'Trusted click harus berasal dari tab browser.' });
       return false;
     }
-    trustedClick(tabId, message.x, message.y)
+    trustedClick(tabId, message.x, message.y, message.stage)
       .then(async () => {
         await postJson('/api/extension/task-progress', {
           taskId: message.taskId,
@@ -115,7 +115,7 @@ async function sendAutomationMessage(tabId, payload) {
   }
 }
 
-async function trustedClick(tabId, x, y) {
+async function trustedClick(tabId, x, y, stage = '') {
   const tab = await chrome.tabs.get(tabId);
   if (!isGoogleVidsUrl(tab.url)) {
     throw new Error('Trusted click hanya diizinkan pada Google Vids.');
@@ -128,6 +128,8 @@ async function trustedClick(tabId, x, y) {
     if (!isGoogleVidsUrl(attachedTab.url)) {
       throw new Error('Tab berpindah dari Google Vids sebelum trusted click.');
     }
+    const resolved = await resolveClickCenter(debuggee, stage);
+    if (resolved) ({ x, y } = resolved);
     await chrome.debugger.sendCommand(debuggee, 'Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
     await chrome.debugger.sendCommand(debuggee, 'Input.dispatchMouseEvent', {
       type: 'mousePressed', x, y, button: 'left', clickCount: 1
@@ -138,6 +140,37 @@ async function trustedClick(tabId, x, y) {
   } finally {
     await chrome.debugger.detach(debuggee);
   }
+}
+
+async function resolveClickCenter(debuggee, stage) {
+  const safeStage = JSON.stringify(String(stage || ''));
+  const result = await chrome.debugger.sendCommand(debuggee, 'Runtime.evaluate', {
+    returnByValue: true,
+    expression: `(() => {
+      const stage = ${safeStage}.toLowerCase();
+      const visible = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+      const label = el => [el.textContent, el.getAttribute('aria-label'), el.getAttribute('data-tooltip')]
+        .filter(Boolean).join(' ').trim().replace(/\\s+/g, ' ').toLowerCase();
+      const controls = [...document.querySelectorAll('button,[role="button"],[role="tab"],div[tabindex]')].filter(visible);
+      let el = null;
+      if (stage.includes('membuka panel video ai')) {
+        el = controls.find(x => (x.getAttribute('aria-label') || '').toLowerCase() === 'buat klip video ai');
+      } else if (stage === 'rendering') {
+        el = controls.find(x => x.getAttribute('role') !== 'tab' && ['buat','kirim'].includes(label(x)));
+      } else if (stage.includes('form buat') || stage === 'submitting') {
+        el = controls.find(x => (x.getAttribute('aria-label') || '').toLowerCase() === 'luaskan');
+      } else if (stage.includes('rasio')) {
+        const wanted = stage.includes('9:16') ? 'potret 9:16' : stage.includes('16:9') ? 'lanskap 16:9' : 'rasio aspek';
+        el = controls.find(x => label(x).includes(wanted));
+      } else if (stage.includes('tambah gambar')) {
+        el = controls.find(x => label(x) === 'bahan');
+      }
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    })()`
+  });
+  return result?.result?.value || null;
 }
 
 async function downloadGeneratedVideo({ videoUrl, taskId, folder }) {

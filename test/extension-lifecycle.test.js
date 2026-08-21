@@ -33,7 +33,8 @@ test('extension menjalankan trusted click DevTools hanya pada Google Vids dan me
 
   assert.ok(manifest.permissions.includes('debugger'));
   assert.ok(manifest.host_permissions.includes('https://docs.google.com/videos/*'));
-  assert.match(background, /async function trustedClick\(tabId, x, y\)/);
+  assert.match(background, /async function trustedClick\(tabId, x, y(?:, stage = ['"]{2})?\)/);
+  assert.match(background, /resolveClickCenter\(debuggee, stage\)/);
   assert.match(background, /chrome\.tabs\.get\(tabId\)/);
   assert.match(background, /https:\/\/docs\.google\.com\/videos\//);
   assert.match(background, /chrome\.debugger\.attach\([^,]+,\s*['"]1\.3['"]\)/);
