@@ -754,6 +754,12 @@
       flex-shrink: 0;
     }
 
+    .queue-delete-btn {
+      min-width: 32px;
+      padding-inline: 8px;
+      color: var(--status-danger-text);
+    }
+
     .icon-btn-delete:hover {
       color: var(--status-danger-text);
       background-color: var(--status-danger-bg);
@@ -845,6 +851,41 @@
 
     tbody tr:hover {
       background: var(--bg-surface-hover);
+    }
+
+    .queue-table {
+      table-layout: fixed;
+      min-width: 1080px;
+    }
+
+    .queue-table td {
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .queue-prompt-cell {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .queue-status-cell {
+      overflow: hidden;
+      padding-right: 20px;
+      text-overflow: ellipsis;
+    }
+
+    .queue-time-cell {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .queue-table .badge-folder {
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      vertical-align: middle;
+      white-space: nowrap;
     }
 
     .status-Pending {
@@ -1521,6 +1562,7 @@
 
             <!-- Batch Prompts Editor -->
             <form id="affiliateBatchForm">
+              <input type="hidden" id="affTargetUrl" value="">
               <div class="form-group">
                 <label for="affPrompts">Prompt Video Affiliate (Batch)</label>
                 <div class="prompt-composer-shell">
@@ -1593,16 +1635,25 @@
       </div>
       <div class="card-body" style="padding: 0;">
         <div class="table-responsive" style="border: none; border-radius: 0;">
-          <table>
+          <table class="queue-table">
+            <colgroup>
+              <col style="width: 54px;">
+              <col style="width: 32%;">
+              <col style="width: 190px;">
+              <col style="width: 90px;">
+              <col style="width: 200px;">
+              <col style="width: 140px;">
+              <col style="width: 150px;">
+            </colgroup>
             <thead>
               <tr>
-                <th style="width: 50px;">No</th>
+                <th>No</th>
                 <th>Prompt Video</th>
-                <th style="width: 140px;">Folder</th>
-                <th style="width: 100px;">Rasio</th>
-                <th style="width: 140px;">Status</th>
-                <th style="width: 170px;">Waktu Dibuat</th>
-                <th style="width: 170px; text-align: right;">Aksi</th>
+                <th>Folder</th>
+                <th>Rasio</th>
+                <th>Status</th>
+                <th>Waktu Dibuat</th>
+                <th style="text-align: right;">Aksi</th>
               </tr>
             </thead>
             <tbody id="queueTable">
@@ -1996,6 +2047,14 @@
       const ratio = document.getElementById('affRatio')?.value || '9:16';
       const folder = document.getElementById('affFolder')?.value || 'Affiliate_General';
       const targetChrome = document.getElementById('affTargetChrome')?.value || 'auto';
+      const url = document.getElementById('affTargetUrl')?.value || '';
+      const affiliateConfig = {
+        productName: document.getElementById('affProductName')?.value || '',
+        productUsp: document.getElementById('affProductUsp')?.value || '',
+        cta: document.getElementById('affCta')?.value || '',
+        style: document.getElementById('affStyle')?.value || 'hook_ugc_2s',
+        variationCount: document.getElementById('affVariationCount')?.value || '3'
+      };
 
       if (!prompts.trim()) {
         showToast('Prompt video affiliate tidak boleh kosong.', '⚠️');
@@ -2014,6 +2073,8 @@
         ratio,
         folder,
         targetChrome,
+        url,
+        affiliateConfig,
         images
       };
 
@@ -2210,25 +2271,63 @@
   window.reusePrompt = function(id) {
     const task = currentQueueData.find(t => t.id === id);
     if (task) {
+      const legacyBatchKey = String(task.id || '').replace(/_\d+$/, '');
+      const batchTasks = currentQueueData.filter(item => task.batchId
+        ? item.batchId === task.batchId
+        : String(item.id || '').replace(/_\d+$/, '') === legacyBatchKey);
+      const batchPrompts = task.batchPrompts || batchTasks
+        .map(item => item.prompt)
+        .join('\n\n') || task.prompt;
       if (task.mode === 'affiliate') {
         const affPrompts = document.getElementById('affPrompts');
         const affRatio = document.getElementById('affRatio');
         const affFolder = document.getElementById('affFolder');
-        if (affPrompts) affPrompts.value = task.prompt;
+        const affTargetChrome = document.getElementById('affTargetChrome');
+        const affTargetUrl = document.getElementById('affTargetUrl');
+        const config = task.affiliateConfig || {};
+        if (affPrompts) affPrompts.value = batchPrompts;
         if (affRatio && task.ratio) affRatio.value = task.ratio;
         if (affFolder && task.folder) affFolder.value = task.folder;
+        if (affTargetChrome) affTargetChrome.value = task.targetChrome || 'auto';
+        if (affTargetUrl) affTargetUrl.value = task.url || '';
+        const productName = document.getElementById('affProductName');
+        const productUsp = document.getElementById('affProductUsp');
+        const cta = document.getElementById('affCta');
+        const style = document.getElementById('affStyle');
+        const variationCount = document.getElementById('affVariationCount');
+        if (productName) productName.value = config.productName || '';
+        if (productUsp) productUsp.value = config.productUsp || '';
+        if (cta) cta.value = config.cta || 'klik keranjang sekarang';
+        if (style) style.value = config.style || 'hook_ugc_2s';
+        if (variationCount) variationCount.value = config.variationCount || '3';
+        slotData.fill(null);
+        (Array.isArray(task.images) ? task.images : []).slice(0, 3).forEach((image, index) => {
+          const tagIndex = Number.parseInt(String(image.tag || '').match(/@?Gambar([1-3])/i)?.[1] || '', 10) - 1;
+          const slotIndex = Number.isInteger(tagIndex) && tagIndex >= 0 ? tagIndex : index;
+          slotData[slotIndex] = { name: image.name || `Gambar${slotIndex + 1}`, dataUrl: image.dataUrl || '' };
+        });
+        [1, 2, 3].forEach(slotNum => {
+          const input = document.getElementById(`slotInput${slotNum}`);
+          if (input) input.value = '';
+          renderSlot(slotNum);
+        });
+        updateSlotBadge();
         switchTab('affiliate');
       } else {
         const genPrompts = document.getElementById('prompts');
         const genRatio = document.getElementById('ratio');
         const genFolder = document.getElementById('folder');
-        if (genPrompts) genPrompts.value = task.prompt;
+        const targetUrl = document.getElementById('targetUrl');
+        const targetChrome = document.getElementById('targetChrome');
+        if (genPrompts) genPrompts.value = batchPrompts;
         if (genRatio && task.ratio) genRatio.value = task.ratio;
         if (genFolder && task.folder) genFolder.value = task.folder;
+        if (targetUrl) targetUrl.value = task.url || '';
+        if (targetChrome) targetChrome.value = task.targetChrome || 'auto';
         switchTab('composer');
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      showToast('Prompt dimuat ke kolom input.', '↺');
+      showToast('Batch lengkap dimuat kembali, termasuk gambar referensi.', '↺');
     }
   };
 
@@ -2256,17 +2355,18 @@
           tbody.innerHTML = data.queue.map((t, idx) => `
             <tr>
               <td><strong>${idx + 1}</strong></td>
-              <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(t.prompt)}">
+              <td class="queue-prompt-cell" title="${escapeHtml(t.prompt)}">
                 ${t.mode === 'affiliate' ? '<span class="badge badge-info" style="margin-right: 6px; font-size: 0.6875rem;">🛍️ Affiliate</span>' : ''}${escapeHtml(t.prompt)}
               </td>
               <td><span class="badge badge-folder">📁 ${escapeHtml(t.folder || 'Umum')}</span></td>
               <td><span class="badge badge-info">${escapeHtml(t.ratio)}</span></td>
-              <td class="status-${escapeHtml(String(t.status ?? '').split(' ')[0])}">${escapeHtml(t.status)}</td>
-              <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-secondary);">${escapeHtml(t.createdAt)}</td>
+              <td class="queue-status-cell status-${escapeHtml(String(t.status ?? '').split(' ')[0])}" title="${escapeHtml(t.status)}">${escapeHtml(t.status)}</td>
+              <td class="queue-time-cell" style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-secondary);" title="${escapeHtml(t.createdAt)}">${escapeHtml(t.createdAt)}</td>
               <td style="text-align: right;">
                 <div class="action-group" style="justify-content: flex-end;">
                   <button data-task-action="copy" data-task-id="${encodeURIComponent(String(t.id ?? ''))}" class="btn btn-sm btn-secondary" type="button" title="Salin Prompt">Salin</button>
                   <button data-task-action="reuse" data-task-id="${encodeURIComponent(String(t.id ?? ''))}" class="btn btn-sm btn-primary" type="button" title="Reuse">Reuse</button>
+                  <button data-task-action="delete" data-task-id="${encodeURIComponent(String(t.id ?? ''))}" class="btn btn-sm btn-danger-outline queue-delete-btn" type="button" title="Hapus task ini" aria-label="Hapus task">🗑</button>
                 </div>
               </td>
             </tr>
@@ -2288,8 +2388,28 @@
       const taskId = decodeURIComponent(button.dataset.taskId);
       if (button.dataset.taskAction === 'copy') window.copyPrompt(taskId);
       if (button.dataset.taskAction === 'reuse') window.reusePrompt(taskId);
+      if (button.dataset.taskAction === 'delete') window.deleteQueueTask(taskId);
     });
   }
+
+  window.deleteQueueTask = async function(taskId) {
+    const task = currentQueueData.find(item => item.id === taskId);
+    if (!task) return;
+    const confirmed = await showConfirm('Hapus satu task ini dari antrean?', 'Hapus Task');
+    if (!confirmed) return;
+    try {
+      const response = await fetch(`/api/queue/${encodeURIComponent(taskId)}`, {
+        method: 'DELETE',
+        headers: { 'X-Dashboard-Request': 'Google-Vids-Dashboard' }
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Task gagal dihapus.');
+      showToast('Task berhasil dihapus.', '🗑');
+      await fetchStatus();
+    } catch (error) {
+      showToast(error.message || 'Task gagal dihapus.', '⚠️');
+    }
+  };
 
   const queueForm = document.getElementById('queueForm');
   if (queueForm) {

@@ -32,6 +32,12 @@ test('public/index.html includes 3-Slot Affiliate UGC Studio, media inputs, and 
   assert.ok(html.includes('@Gambar1'), 'Harus memiliki referensi tag Gambar1');
   assert.ok(html.includes('@Gambar2'), 'Harus memiliki referensi tag Gambar2');
   assert.ok(html.includes('@Gambar3'), 'Harus memiliki referensi tag Gambar3');
+  assert.ok(html.includes('const batchPrompts = task.batchPrompts'), 'Reuse harus memulihkan seluruh batch prompt');
+  assert.ok(html.includes('Array.isArray(task.images)'), 'Reuse harus memulihkan gambar referensi');
+  assert.ok(html.includes('slotData[slotIndex]'), 'Reuse harus mengembalikan gambar ke slot asalnya');
+  assert.ok(html.includes('data-task-action="delete"'), 'Antrean harus memiliki tombol hapus satuan');
+  assert.ok(html.includes('window.deleteQueueTask'), 'Tombol hapus satuan harus memiliki handler');
+  assert.ok(html.includes('affiliateConfig'), 'Reuse harus menyimpan parameter Smart Affiliate Copywriter');
 
   // Anti-slop rule: No em dashes
   assert.ok(!html.includes('—'), 'HTML tidak boleh mengandung em dash (anti-slop)');
@@ -47,7 +53,14 @@ test('server /api/queue/add supports affiliate mode with up to 3 image attachmen
       mode: 'affiliate',
       ratio: '9:16',
       folder: 'Affiliate_Marshall_Cream',
-      prompts: '@Gambar1 buatkan video UGC affiliate dengan 2 detik pertama HOOK untuk @Gambar2 produk @Gambar3 promosikan dalam bahasa indonesia, produk tentang Marshall Major V Headphone warna Cream, akhiri CTA untuk klik keranjang sekarang.\n\n@Gambar1 unboxing @Gambar2 dengan detail @Gambar3.',
+      affiliateConfig: {
+        productName: 'Marshall Major V Cream',
+        productUsp: 'Baterai 100 jam',
+        cta: 'klik keranjang sekarang',
+        style: 'honest_review',
+        variationCount: '5'
+      },
+      prompts: '@Gambar1 {tersenyum|berbicara} saat mereview @Gambar2 dengan detail @Gambar3.\n\n@Gambar1 {tersenyum|berbicara} saat mereview @Gambar2 dengan detail @Gambar3.',
       images: [
         { type: 'avatar', tag: '@Gambar1', name: 'avatar_person.jpg', dataUrl: 'data:image/jpeg;base64,123' },
         { type: 'product', tag: '@Gambar2', name: 'marshall_front.jpg', dataUrl: 'data:image/jpeg;base64,456' },
@@ -84,6 +97,14 @@ test('server /api/queue/add supports affiliate mode with up to 3 image attachmen
     assert.equal(task.images[0].tag, '@Gambar1');
     assert.equal(task.images[1].tag, '@Gambar2');
     assert.equal(task.images[2].tag, '@Gambar3');
+    assert.deepEqual(task.affiliateConfig, payload.affiliateConfig);
+    assert.ok(task.batchId);
+    assert.equal(task.batchPrompts, payload.prompts);
+    assert.equal(task.promptTemplate, '@Gambar1 {tersenyum|berbicara} saat mereview @Gambar2 dengan detail @Gambar3.');
+    assert.equal(task.prompt, '@Gambar1 tersenyum saat mereview @Gambar2 dengan detail @Gambar3.');
+    assert.equal(affiliateTasks[affiliateTasks.length - 1].batchId, task.batchId);
+    assert.equal(affiliateTasks[affiliateTasks.length - 1].batchPrompts, payload.prompts);
+    assert.equal(affiliateTasks[affiliateTasks.length - 1].prompt, '@Gambar1 berbicara saat mereview @Gambar2 dengan detail @Gambar3.');
   } finally {
     await new Promise(resolve => server.close(resolve));
   }

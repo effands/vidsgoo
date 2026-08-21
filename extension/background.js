@@ -43,6 +43,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .catch((error) => sendResponse({ success: false, error: error.message }));
     return true;
   }
+  if (message.type === 'TRUSTED_KEY') {
+    const tabId = sender?.tab?.id;
+    if (typeof tabId !== 'number') {
+      sendResponse({ success: false, error: 'Trusted key harus berasal dari tab browser.' });
+      return false;
+    }
+    trustedKey(tabId, message.key || 'Enter')
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
+  if (message.type === 'HARD_RELOAD_AND_RETRY') {
+    const tabId = sender?.tab?.id;
+    if (typeof tabId !== 'number') {
+      sendResponse({ success: false, error: 'Reload harus berasal dari tab browser.' });
+      return false;
+    }
+    hardReloadAndRetry(tabId, message.taskId, message.error)
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
   if (message.type === 'AUTOMATION_FAILED') {
     reportFailure(message.taskId, message.error || 'Automasi Google Vids gagal.');
     return false;
@@ -122,14 +144,26 @@ async function trustedClick(tabId, x, y, stage = '') {
   }
 
   const debuggee = { tabId };
-  await chrome.debugger.attach(debuggee, '1.3');
+  try {
+    await chrome.debugger.attach(debuggee, '1.3');
+  } catch (error) {
+    // Service worker dapat menerima klik berikutnya ketika sesi milik ekstensi ini
+    // masih terpasang. CDP tetap dapat dipakai; jangan jatuh ke klik DOM untrusted.
+    if (!/already attached|another debugger is already attached/i.test(String(error?.message || error))) {
+      throw error;
+    }
+  }
   try {
     const attachedTab = await chrome.tabs.get(tabId);
     if (!isGoogleVidsUrl(attachedTab.url)) {
       throw new Error('Tab berpindah dari Google Vids sebelum trusted click.');
     }
-    const resolved = await resolveClickCenter(debuggee, stage);
-    if (resolved) ({ x, y } = resolved);
+    // Koordinat sudah dihitung dari elemen yang terlihat oleh content script.
+    // Runtime.evaluate di halaman Vids dapat menggantung dan meninggalkan debugger
+    // tetap terpasang, sehingga klik Video AI berikutnya tidak pernah terkirim.
+    // Chrome menambahkan infobar debugger sesudah attach dan menggeser viewport ke
+    // bawah. Kompensasi tinggi infobar agar klik tetap mengenai kontrol asal.
+    y += 36;
     await chrome.debugger.sendCommand(debuggee, 'Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
     await chrome.debugger.sendCommand(debuggee, 'Input.dispatchMouseEvent', {
       type: 'mousePressed', x, y, button: 'left', clickCount: 1
@@ -138,8 +172,36 @@ async function trustedClick(tabId, x, y, stage = '') {
       type: 'mouseReleased', x, y, button: 'left', clickCount: 1
     });
   } finally {
-    await chrome.debugger.detach(debuggee);
+    try { await chrome.debugger.detach(debuggee); } catch (_) {}
   }
+}
+
+async function trustedKey(tabId, key = 'Enter') {
+  const tab = await chrome.tabs.get(tabId);
+  if (!isGoogleVidsUrl(tab.url)) throw new Error('Trusted key hanya diizinkan pada Google Vids.');
+  const debuggee = { tabId };
+  try {
+    await chrome.debugger.attach(debuggee, '1.3');
+  } catch (error) {
+    if (!/already attached|another debugger is already attached/i.test(String(error?.message || error))) throw error;
+  }
+  try {
+    const keyCode = key === 'Enter' ? 13 : 0;
+    const params = { key, code: key, windowsVirtualKeyCode: keyCode, nativeVirtualKeyCode: keyCode };
+    await chrome.debugger.sendCommand(debuggee, 'Input.dispatchKeyEvent', { type: 'rawKeyDown', ...params });
+    await chrome.debugger.sendCommand(debuggee, 'Input.dispatchKeyEvent', { type: 'keyUp', ...params });
+  } finally {
+    try { await chrome.debugger.detach(debuggee); } catch (_) {}
+  }
+}
+
+async function hardReloadAndRetry(tabId, taskId, error = '') {
+  const tab = await chrome.tabs.get(tabId);
+  if (!isGoogleVidsUrl(tab.url)) throw new Error('Hard reload hanya diizinkan pada Google Vids.');
+  // Awalan ini juga dikenali server yang sedang berjalan, jadi retry tetap
+  // langsung walau server belum sempat direstart untuk memuat pola baru.
+  await reportFailure(taskId, `tombol Buat tidak ditemukan setelah 30 detik. RETRY_AFTER_HARD_RELOAD: ${error || 'form affiliate gagal dibersihkan'}`);
+  await chrome.tabs.reload(tabId, { bypassCache: true });
 }
 
 async function resolveClickCenter(debuggee, stage) {

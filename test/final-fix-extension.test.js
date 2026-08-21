@@ -164,6 +164,35 @@ test('trustedClick rechecks the tab URL after attach and always detaches on mism
   assert.deepEqual(events, ['attach', 'detach']);
 });
 
+test('trustedKey dispatches Enter to the focused Google Vids ratio control', async () => {
+  const commands = [];
+  const harness = loadBackground({
+    debuggerApi: {
+      async sendCommand(_debuggee, method, params) { commands.push({ method, params }); }
+    }
+  });
+
+  await invoke(harness.context, "trustedKey(12, 'Enter')");
+  assert.deepEqual(commands.map(command => command.params.type), ['rawKeyDown', 'keyUp']);
+  assert.ok(commands.every(command => command.method === 'Input.dispatchKeyEvent'));
+});
+
+test('hardReloadAndRetry reports the same task before bypass-cache reload', async () => {
+  const events = [];
+  const harness = loadBackground({
+    tabs: {
+      async get() { return { id: 12, url: 'https://docs.google.com/videos/create' }; },
+      async reload(_tabId, options) { events.push(['reload', options]); }
+    }
+  });
+
+  await invoke(harness.context, "hardReloadAndRetry(12, 'task_reload', 'composer tidak bersih')");
+  assert.equal(harness.requests.filter(request => request.url.endsWith('/api/extension/fail-task')).length, 1);
+  assert.equal(events.length, 1);
+  assert.equal(events[0][0], 'reload');
+  assert.equal(events[0][1].bypassCache, true);
+});
+
 function contentElement({ text = '', ariaLabel = null, onClick = null } = {}) {
   return {
     disabled: false,
@@ -279,7 +308,9 @@ async function runContentAutomation({ images = undefined, ratio = '16:9', mode =
   const referenceTags = [contentElement({ text: 'Gambar1' }), contentElement({ text: 'Gambar2' }), contentElement({ text: 'Gambar3' })];
   const fileInput = contentElement();
   fileInput.accept = 'image/png';
-  fileInput.dispatchEvent = event => { if (event?.type === 'change') uploadedReferenceCount += 1; };
+  fileInput.dispatchEvent = event => {
+    if (event?.type === 'change') uploadedReferenceCount += fileInput.files?.length || 0;
+  };
   const document = {
     execCommand() { return true; },
     createRange() { return { selectNodeContents() {} }; },
@@ -371,13 +402,14 @@ async function runContentAutomation({ images = undefined, ratio = '16:9', mode =
   return { result, sent, renderRequests, videoAiClickCount };
 }
 
-test('affiliate image automation expands the Buat composer before selecting Bahan', async () => {
+test('affiliate image automation expands the Buat composer before direct upload', async () => {
   const { result, sent } = await runContentAutomation({
     images: [{ name: 'produk.png', tag: '@Gambar1', dataUrl: 'data:image/png;base64,AA==' }]
   });
   assert.equal(result.success, true);
   const stages = sent.filter(message => message.type === 'TRUSTED_CLICK').map(message => message.stage);
-  assert.ok(stages.indexOf('Membuka Form Buat') < stages.indexOf('Klik Tambah Gambar'));
+  assert.ok(stages.includes('Membuka Form Buat'));
+  assert.equal(stages.includes('Klik Tambah Gambar'), false);
 });
 
 test('Video AI is clicked again when the first click does not open the prompt', async () => {
@@ -392,7 +424,7 @@ test('Video AI opens with one direct click when the control responds normally', 
   assert.equal(videoAiClickCount, 1);
 });
 
-test('affiliate image automation opens Bahan only once for multiple images', async () => {
+test('affiliate image automation uploads multiple images sequentially without opening native file picker', async () => {
   const { result, sent } = await runContentAutomation({
     images: [
       { name: 'produk-1.png', tag: '@Gambar1', dataUrl: 'data:image/png;base64,AA==' },
@@ -401,7 +433,7 @@ test('affiliate image automation opens Bahan only once for multiple images', asy
   });
   assert.equal(result.success, true);
   const bahanClicks = sent.filter(message => message.type === 'TRUSTED_CLICK' && message.stage === 'Klik Tambah Gambar');
-  assert.equal(bahanClicks.length, 1, 'Bahan must not be clicked again after the first upload');
+  assert.equal(bahanClicks.length, 0, 'Bahan must not be clicked because it opens the native file picker');
 });
 
 test('affiliate automation selects and confirms portrait ratio before Rendering', async () => {
@@ -410,6 +442,12 @@ test('affiliate automation selects and confirms portrait ratio before Rendering'
   const stages = sent.filter(message => message.type === 'TRUSTED_CLICK').map(message => message.stage);
   assert.ok(stages.indexOf('Memilih Rasio 9:16') > stages.indexOf('Membuka Pilihan Rasio'));
   assert.equal(result.success, true);
+});
+
+test('affiliate ratio uses trusted keyboard activation instead of coordinate clicks', () => {
+  assert.match(contentSource, /trustedKeyPress\(active, taskId, 'Membuka Pilihan Rasio'\)/);
+  assert.match(contentSource, /trustedKeyPress\(option, taskId, 'Memilih Rasio '/);
+  assert.match(contentSource, /\[role="menuitemradio"\]/);
 });
 
 test('ordinary video mode skips affiliate Bahan but confirms ratio before Rendering', async () => {

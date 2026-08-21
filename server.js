@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const crypto = require('crypto');
-const { parsePromptBlocks, inspectVideoFile, resolveVideoTarget } = require('./lib/job-utils');
+const { parsePromptBlocks, resolveSpintax, inspectVideoFile, resolveVideoTarget } = require('./lib/job-utils');
 
 const app = express();
 const PORT = 7890;
@@ -189,8 +189,19 @@ let chromeInstances = [
   { id: 'chrome3', name: 'Chrome Profile 3 (Port 9224)', port: 9224, status: 'unknown' }
 ];
 
-// Queue jobs storage
+// Queue jobs storage. Snapshot sementara dipakai hanya saat server perlu dimuat
+// ulang untuk menerapkan pembaruan tanpa menghilangkan riwayat antrean di UI.
+const queueRestartSnapshotPath = path.join(__dirname, '.queue-restart-snapshot.json');
 let taskQueue = [];
+try {
+  if (fs.existsSync(queueRestartSnapshotPath)) {
+    const restored = JSON.parse(fs.readFileSync(queueRestartSnapshotPath, 'utf8'));
+    if (Array.isArray(restored)) taskQueue = restored;
+    fs.unlinkSync(queueRestartSnapshotPath);
+  }
+} catch (error) {
+  console.error('Snapshot antrean gagal dipulihkan:', error.message);
+}
 let isProcessing = false;
 let activeTaskId = null;
 let resetVersion = 0;
@@ -412,7 +423,7 @@ app.post('/api/extension/fail-task', (req, res) => {
   if (!isProcessing || activeTaskId !== task.id || !/^(Processing|Submitting|Rendering|Downloading)/.test(task.status)) {
     return res.status(409).json({ error: 'Task bukan assignment aktif.' });
   }
-  const retryable = /Receiving end does not exist|Could not establish connection/i.test(error || '') ||
+  const retryable = /Receiving end does not exist|Could not establish connection|RETRY_AFTER_HARD_RELOAD/i.test(error || '') ||
     /^(tombol Video AI|kotak prompt Google Vids|tombol Buat).*tidak ditemukan setelah/i.test(error || '');
   task.status = retryable ? 'Pending (Retry Agent)' : 'Failed';
   if (retryable) task.assignedAgent = null;
@@ -477,6 +488,18 @@ app.delete('/api/queue/clear', requireDashboardOrigin, (req, res) => {
   res.json({ success: true });
 });
 
+app.delete('/api/queue/:taskId', requireDashboardOrigin, (req, res) => {
+  const taskId = String(req.params.taskId || '');
+  const index = taskQueue.findIndex(task => task.id === taskId);
+  if (index < 0) return res.status(404).json({ error: 'Task tidak ditemukan.' });
+  if (activeTaskId === taskId || /^(Processing|Submitting|Rendering|Downloading)/.test(taskQueue[index].status)) {
+    return res.status(409).json({ error: 'Task yang sedang aktif tidak dapat dihapus.' });
+  }
+  const [deleted] = taskQueue.splice(index, 1);
+  addLog(`🗑️ Task dihapus | ${deleted.id} | ${String(deleted.prompt || '').slice(0, 64)}`);
+  res.json({ success: true, taskId });
+});
+
 app.post('/api/queue/stop-reset', requireDashboardOrigin, (req, res) => {
   const stoppedAt = Date.now();
   let cancelled = 0;
@@ -496,7 +519,7 @@ app.post('/api/queue/stop-reset', requireDashboardOrigin, (req, res) => {
 
 // Add Queue Task (Single or Batch Prompts)
 app.post('/api/queue/add', requireDashboardOrigin, (req, res) => {
-  const { prompts, url, ratio, targetChrome, folder, images, mode } = req.body;
+  const { prompts, url, ratio, targetChrome, folder, images, mode, affiliateConfig } = req.body;
 
   if (!prompts || !prompts.trim()) {
     return res.status(400).json({ error: 'Prompt tidak boleh kosong' });
@@ -508,20 +531,34 @@ app.post('/api/queue/add', requireDashboardOrigin, (req, res) => {
   const promptList = parsePromptBlocks(prompts);
   const sanitizedFolder = String(folder || '').replace(/[<>:"/\\|?*\x00-\x1F]/g, '').trim();
   const safeImages = Array.isArray(images) ? images.slice(0, 3) : [];
+  const safeAffiliateConfig = mode === 'affiliate' && affiliateConfig && typeof affiliateConfig === 'object' ? {
+    productName: String(affiliateConfig.productName || '').slice(0, 300),
+    productUsp: String(affiliateConfig.productUsp || '').slice(0, 1000),
+    cta: String(affiliateConfig.cta || '').slice(0, 300),
+    style: String(affiliateConfig.style || 'hook_ugc_2s').slice(0, 100),
+    variationCount: String(affiliateConfig.variationCount || '3').slice(0, 10)
+  } : null;
+  const batchTimestamp = Date.now();
+  const batchId = `batch_${batchTimestamp}_${crypto.randomBytes(4).toString('hex')}`;
+  const batchPrompts = promptList.join('\n\n');
   
   promptList.forEach((pText, index) => {
     taskQueue.push({
-      id: `task_${Date.now()}_${index}`,
-      prompt: pText,
+      id: `task_${batchTimestamp}_${index}`,
+      batchId,
+      batchPrompts,
+      promptTemplate: pText,
+      prompt: resolveSpintax(pText, index),
       url: url || '',
       ratio: ratio || '16:9',
       targetChrome: targetChrome || 'auto',
       folder: sanitizedFolder,
       images: safeImages,
+      affiliateConfig: safeAffiliateConfig,
       mode: mode || 'standard',
       status: 'Pending',
       createdAt: new Date().toLocaleTimeString(),
-      createdTimestamp: Date.now()
+      createdTimestamp: batchTimestamp
     });
   });
 

@@ -4,7 +4,19 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { parsePromptBlocks, inspectVideoFile, resolveVideoTarget } = require('../lib/job-utils');
+const { parsePromptBlocks, resolveSpintax, inspectVideoFile, resolveVideoTarget } = require('../lib/job-utils');
+
+test('spintax memilih kombinasi berbeda per indeks tanpa mengubah tag gambar', () => {
+  const template = '@Gambar1 {tersenyum|berbicara} sambil {membawa|menunjukkan} @Gambar2';
+  assert.equal(resolveSpintax(template, 0), '@Gambar1 tersenyum sambil membawa @Gambar2');
+  assert.equal(resolveSpintax(template, 1), '@Gambar1 berbicara sambil membawa @Gambar2');
+  assert.equal(resolveSpintax(template, 2), '@Gambar1 tersenyum sambil menunjukkan @Gambar2');
+  assert.equal(resolveSpintax(template, 4), '@Gambar1 tersenyum sambil membawa @Gambar2');
+});
+
+test('spintax membiarkan kurung biasa dan grup tanpa pilihan tetap utuh', () => {
+  assert.equal(resolveSpintax('UGC {santai} rasio (9:16)', 0), 'UGC {santai} rasio (9:16)');
+});
 
 test('satu prompt mempertahankan seluruh barisnya', () => {
   const input = 'Adegan sungai\nKabut tipis\nKamera bergerak perlahan';

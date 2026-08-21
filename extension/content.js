@@ -29,7 +29,8 @@
     const isAffiliate = mode === 'affiliate';
 
     // 1. Pastikan panel 'Video AI' di toolbar sisi kanan terbuka
-    let promptBox = findAiPromptBox();
+    const findTaskPromptBox = isAffiliate ? findAffiliateAiPromptBox : findAiPromptBox;
+    let promptBox = findTaskPromptBox();
     if (!promptBox) {
       console.log('[Content] Panel Video AI belum terbuka. Membuka tombol Video AI di toolbar kanan...');
       let lastOpenError = null;
@@ -42,10 +43,10 @@
           simulateClick(videoAiButton);
         }
         try {
-          promptBox = await waitFor(findAiPromptBox, 6000, 250, 'kotak prompt Google Vids');
+          promptBox = await waitFor(findTaskPromptBox, 6000, 250, 'kotak prompt Google Vids');
         } catch (error) {
           lastOpenError = error;
-          promptBox = findAiPromptBox();
+          promptBox = findTaskPromptBox();
         }
       }
       if (!promptBox) throw lastOpenError || new Error('Panel Video AI gagal dibuka setelah 3 percobaan.');
@@ -56,17 +57,28 @@
       const createModeButton = await waitFor(findCreateModeButton, 15000, 250, 'tab Buat pada panel Video AI');
       try { await trustedClick(createModeButton, taskId, 'Pilih Mode Buat'); }
       catch (_) { simulateClick(createModeButton); }
-      promptBox = await waitFor(findAiPromptBox, 15000, 250, 'kotak prompt Google Vids pada mode Buat');
+      promptBox = await waitFor(findAffiliateAiPromptBox, 15000, 250, 'kotak prompt Google Vids pada mode Buat');
 
       const expandButton = findButton(button => isVisible(button) && button.getAttribute('aria-label') === 'Luaskan');
       if (expandButton) {
         try { await trustedClick(expandButton, taskId, 'Membuka Form Buat'); }
         catch (_) { simulateClick(expandButton); }
-        promptBox = await waitFor(findAiPromptBox, 15000, 250, 'kotak prompt Google Vids yang diperluas');
+        promptBox = await waitFor(findAffiliateAiPromptBox, 15000, 250, 'kotak prompt Google Vids yang diperluas');
       }
-      if (Array.isArray(images) && images.length > 0) await attachImagesToVids(images, promptBox, taskId);
+      try {
+        await clearPreviousAffiliateComposer(promptBox, taskId);
+      } catch (error) {
+        await chrome.runtime.sendMessage({
+          type: 'HARD_RELOAD_AND_RETRY',
+          taskId,
+          error: error.message
+        });
+        throw new Error(`RETRY_AFTER_HARD_RELOAD: ${error.message}`);
+      }
+      promptBox = await waitFor(findAffiliateAiPromptBox, 15000, 200, 'kotak prompt affiliate setelah dibersihkan');
+      if (Array.isArray(images) && images.length > 0) await attachImagesToVids(images, promptBox, taskId, true);
       await typePromptWithMentions(promptBox, prompt, taskId);
-      await selectVidsRatio(ratio, taskId);
+      await selectAffiliateVidsRatio(ratio, taskId);
       createButton = await waitFor(findCreateButton, 30000, 250, 'tombol Buat / Kirim');
     } else {
       // Pertahankan alur video biasa yang lama; perubahan affiliate tidak boleh masuk ke jalur ini.
@@ -116,6 +128,26 @@
       }
 
       return false;
+    }) || null;
+  }
+
+  // Affiliate memakai editor contenteditable yang struktur/aria-nya sering berubah.
+  // Batasi pencarian ke rail kanan agar tidak pernah memilih textbox di kanvas utama.
+  function findAffiliateAiPromptBox() {
+    const inputs = Array.from(document.querySelectorAll(
+      '[role="textbox"], textarea, [contenteditable="true"], input[type="text"]'
+    ));
+    return inputs.find(el => {
+      if (!isVisible(el)) return false;
+      const rect = el.getBoundingClientRect();
+      if (rect.left < window.innerWidth * 0.62) return false;
+      const aria = (el.getAttribute('aria-label') || '').toLowerCase();
+      const placeholder = (el.getAttribute('placeholder') || '').toLowerCase();
+      const semanticPrompt = ['deskripsikan', 'perintah', 'prompt', 'video']
+        .some(word => aria.includes(word) || placeholder.includes(word));
+      const panel = el.closest?.('[role="complementary"]') || el.parentElement;
+      const panelText = (panel?.textContent || '').toLowerCase();
+      return semanticPrompt || panelText.includes('buat') || panelText.includes('animasi');
     }) || null;
   }
 
@@ -214,7 +246,7 @@
       if (!isVisible(el)) return false;
       const label = elementLabel(el);
       return label.includes('wujudkan visi anda') || label.includes('proses ini perlu waktu') ||
-             label === 'batal' || label.includes('cancel generation');
+             label === 'batal' || label.includes('cancel generation') || /^\d{1,3}%$/.test(label);
     });
   }
 
@@ -223,13 +255,7 @@
     if (!raw) throw new Error('Prompt kosong.');
     promptBox.focus();
 
-    // Clear existing content in prompt box
-    const selection = window.getSelection();
-    const range = document.createRange();
-    range.selectNodeContents(promptBox);
-    selection.removeAllRanges();
-    selection.addRange(range);
-    document.execCommand('delete', false, null);
+    await clearPromptBox(promptBox);
 
     // Split text by mention tokens like @Gambar1, @Gambar2, @Gambar3
     const tokenRegex = /(@Gambar\d+)/gi;
@@ -262,6 +288,69 @@
 
     promptBox.dispatchEvent(new InputEvent('input', { bubbles: true }));
     promptBox.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  async function clearPromptBox(promptBox) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      promptBox.focus();
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(promptBox);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.execCommand('delete', false, null);
+      promptBox.dispatchEvent(new InputEvent('input', {
+        bubbles: true,
+        inputType: 'deleteContentBackward',
+        data: null
+      }));
+      promptBox.dispatchEvent(new Event('change', { bubbles: true }));
+      await new Promise(resolve => setTimeout(resolve, 250));
+      if (!readPrompt(promptBox)) return;
+    }
+    throw new Error('Prompt lama Google Vids tidak berhasil dibersihkan.');
+  }
+
+  async function clearPreviousAffiliateComposer(promptBox, taskId) {
+    const clearButton = findAffiliateComposerClearButton(promptBox);
+    const hasPrompt = Boolean(readPrompt(promptBox));
+    const hasReferences = hasAffiliateComposerReferences(promptBox);
+    if (!clearButton || (!hasPrompt && !hasReferences)) return;
+
+    try { await trustedClick(clearButton, taskId, 'Bersihkan Form Affiliate'); }
+    catch (_) { simulateClick(clearButton); }
+
+    await waitFor(() => {
+      const currentPrompt = findAffiliateAiPromptBox();
+      if (!currentPrompt || readPrompt(currentPrompt)) return null;
+      return hasAffiliateComposerReferences(currentPrompt) ? null : currentPrompt;
+    }, 10000, 200, 'form affiliate kosong sebelum task berikutnya');
+  }
+
+  function findAffiliateComposerClearButton(promptBox) {
+    const promptRect = promptBox.getBoundingClientRect();
+    const candidates = Array.from(document.querySelectorAll('button, [role="button"]')).filter(button => {
+      if (!isVisible(button) || button.disabled) return false;
+      if (elementLabel(button) !== 'hapus') return false;
+      const rect = button.getBoundingClientRect();
+      return rect.left > window.innerWidth * 0.62 && rect.top >= promptRect.top;
+    });
+    return candidates.sort((a, b) =>
+      Math.abs(a.getBoundingClientRect().top - promptRect.bottom) -
+      Math.abs(b.getBoundingClientRect().top - promptRect.bottom)
+    )[0] || null;
+  }
+
+  function hasAffiliateComposerReferences(promptBox) {
+    const promptRect = promptBox.getBoundingClientRect();
+    return Array.from(document.querySelectorAll('[aria-label], [data-tooltip], span')).some(el => {
+      if (!isVisible(el)) return false;
+      const rect = el.getBoundingClientRect();
+      if (rect.left < window.innerWidth * 0.62 || rect.top < promptRect.top) return false;
+      return /^@?gambar\d+$/i.test((el.textContent || '').trim()) ||
+        /gambar\d+/i.test(el.getAttribute('aria-label') || '') ||
+        /gambar\d+/i.test(el.getAttribute('data-tooltip') || '');
+    });
   }
 
   function insertTextAtCaret(element, text) {
@@ -328,33 +417,49 @@
     return new File([array], filename || 'image.png', { type: mime });
   }
 
-  async function attachImagesToVids(images, promptBox, taskId) {
+  async function attachImagesToVids(images, promptBox, taskId, preferNewestInput = false) {
     const files = images.slice(0, 3).map((img, idx) => ({
       file: dataUrlToFile(img.dataUrl, img.name || 'gambar_' + (idx + 1) + '.png'),
       tag: String(img.tag || '@Gambar' + (idx + 1)).replace(/^@/, '')
     })).filter(item => item.file);
     if (!files.length) return;
-    const addBtn = await waitFor(findBahanOrAddButton, 15000, 250, 'tombol Bahan');
-    try { await trustedClick(addBtn, taskId, 'Klik Tambah Gambar'); }
-    catch (_) { simulateClick(addBtn); }
-    await new Promise(r => setTimeout(r, 500));
+    // Jangan klik Bahan: klik tersebut memanggil file picker native Windows yang
+    // tetap terbuka walaupun file sudah dimasukkan secara programatis.
+    // Google Vids memproses satu file per event change. Cari ulang input setiap
+    // putaran karena elemen dapat dirender ulang setelah satu gambar masuk.
     for (const { file, tag } of files) {
-      const uploadItem = findUploadMenuItem();
-      const fileInput = Array.from(document.querySelectorAll('input[type="file"]')).find(input => !input.disabled && (!input.accept || input.accept.includes('image'))) || null;
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      if (fileInput) {
+      let uploaded = false;
+      let lastError = null;
+      for (let attempt = 1; attempt <= 3 && !uploaded; attempt++) {
+        const fileInput = await waitFor(
+          () => findImageFileInput(preferNewestInput), 15000, 250, 'input unggah gambar Google Vids'
+        );
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        try { fileInput.value = ''; } catch (_) {}
         fileInput.files = dt.files;
         fileInput.dispatchEvent(new Event('input', { bubbles: true }));
         fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-      } else {
-        const dropTarget = uploadItem || addBtn;
-        dropTarget.dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true }));
-        dropTarget.dispatchEvent(new DragEvent('dragover', { dataTransfer: dt, bubbles: true }));
-        dropTarget.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }));
+        try {
+          await waitFor(() => hasReferenceTag(tag), 20000, 400, 'referensi @' + tag + ' selesai diunggah');
+          uploaded = true;
+        } catch (error) {
+          lastError = error;
+          await new Promise(resolve => setTimeout(resolve, 1200));
+        }
       }
-      await waitFor(() => hasReferenceTag(tag), 60000, 500, 'referensi @' + tag + ' selesai diunggah');
+      if (!uploaded) throw lastError || new Error('Pilihan @' + tag + ' tidak muncul setelah gambar diunggah.');
+      await new Promise(resolve => setTimeout(resolve, 1600));
     }
+  }
+
+  function findImageFileInput(preferNewest = false) {
+    const inputs = Array.from(document.querySelectorAll('input[type="file"]')).filter(input => {
+      if (input.disabled) return false;
+      const accept = (input.accept || '').toLowerCase();
+      return !accept || accept.includes('image') || /png|jpe?g|webp/.test(accept);
+    });
+    return (preferNewest ? inputs.at(-1) : inputs[0]) || null;
   }
 
   function hasReferenceTag(tagLabel) {
@@ -433,17 +538,105 @@
 
   async function selectVidsRatio(ratio, taskId) {
     const wanted = ratio === '9:16' ? 'potret' : 'lanskap';
-    const ratioButton = await waitFor(findRatioButton, 15000, 250, 'tombol rasio aspek');
-    if (elementLabel(ratioButton).includes(wanted)) return;
-    try { await trustedClick(ratioButton, taskId, 'Membuka Pilihan Rasio'); }
-    catch (_) { simulateClick(ratioButton); }
-    const option = await waitFor(() => findRatioOption(wanted), 10000, 200, 'pilihan rasio ' + ratio);
-    try { await trustedClick(option, taskId, 'Memilih Rasio ' + ratio); }
-    catch (_) { simulateClick(option); }
-    await waitFor(() => {
-      const active = findRatioButton();
-      return active && elementLabel(active).includes(wanted) ? active : null;
-    }, 10000, 200, 'konfirmasi rasio ' + ratio);
+    let lastError = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const active = await waitFor(findRatioButton, 15000, 250, 'tombol rasio aspek');
+      if (elementLabel(active).includes(wanted)) return;
+
+      let option = findRatioOption(wanted);
+      if (!option) {
+        try { await trustedClick(active, taskId, 'Membuka Pilihan Rasio'); }
+        catch (_) { simulateClick(active); }
+        option = await waitFor(() => findRatioOption(wanted), 5000, 200, 'pilihan rasio ' + ratio);
+      }
+
+      try {
+        await trustedClick(option, taskId, 'Memilih Rasio ' + ratio + (attempt > 1 ? ' (percobaan ' + attempt + ')' : ''));
+      } catch (_) {
+        simulateClick(option);
+      }
+
+      try {
+        await waitFor(() => {
+          const selected = findRatioButton();
+          return selected && elementLabel(selected).includes(wanted) ? selected : null;
+        }, 3000, 200, 'konfirmasi rasio ' + ratio);
+        return;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError || new Error('Rasio ' + ratio + ' tidak berhasil dipilih setelah 3 percobaan.');
+  }
+
+  async function selectAffiliateVidsRatio(ratio, taskId) {
+    const wanted = ratio === '9:16' ? 'potret' : 'lanskap';
+    let lastError = null;
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      const active = await waitFor(findRatioButton, 15000, 200, 'tombol rasio aspek affiliate');
+      if (elementLabel(active).includes(wanted)) return;
+
+      let option = findAffiliateRatioOption(wanted);
+      if (!option) {
+        // Google Vids mengabaikan click() DOM pada dropdown ini. Fokuskan elemen
+        // yang tepat lalu kirim Enter tepercaya agar tidak bergantung koordinat.
+        try { await trustedKeyPress(active, taskId, 'Membuka Pilihan Rasio'); }
+        catch (_) { simulateClick(active); }
+        try {
+          option = await waitFor(() => findAffiliateRatioOption(wanted), 2500, 100, 'pilihan rasio affiliate ' + ratio);
+        } catch (error) {
+          try { await trustedClick(active, taskId, 'Membuka Pilihan Rasio'); }
+          catch (_) { simulateClick(active); }
+          try {
+            option = await waitFor(() => findAffiliateRatioOption(wanted), 2500, 100, 'pilihan rasio affiliate ' + ratio);
+          } catch (fallbackError) {
+            lastError = fallbackError;
+            continue;
+          }
+        }
+      }
+
+      try { await trustedKeyPress(option, taskId, 'Memilih Rasio ' + ratio); }
+      catch (_) { simulateClick(option); }
+      try {
+        await waitFor(() => {
+          const selected = findRatioButton();
+          return selected && elementLabel(selected).includes(wanted) ? selected : null;
+        }, 1200, 100, 'konfirmasi rasio affiliate ' + ratio);
+        return;
+      } catch (error) {
+        lastError = error;
+        try { await trustedClick(option, taskId, 'Memilih Rasio ' + ratio); }
+        catch (_) { simulateClick(option); }
+        try {
+          await waitFor(() => {
+            const selected = findRatioButton();
+            return selected && elementLabel(selected).includes(wanted) ? selected : null;
+          }, 2500, 100, 'konfirmasi rasio affiliate ' + ratio);
+          return;
+        } catch (fallbackError) {
+          lastError = fallbackError;
+        }
+      }
+    }
+    throw lastError || new Error('Rasio affiliate ' + ratio + ' tidak berhasil dipilih.');
+  }
+
+  function findAffiliateRatioOption(wanted) {
+    const standardOption = findRatioOption(wanted);
+    if (standardOption) return standardOption;
+    const expected = wanted === 'potret' ? 'potret 9:16' : 'lanskap 16:9';
+    const matches = Array.from(document.querySelectorAll('body *')).filter(el => {
+      if (!isVisible(el) || el.disabled) return false;
+      const label = elementLabel(el);
+      if (!label.includes(expected)) return false;
+      const childWithSameLabel = Array.from(el.children || []).some(child =>
+        isVisible(child) && elementLabel(child).includes(expected)
+      );
+      return !childWithSameLabel;
+    });
+    const leaf = matches[0];
+    return leaf?.closest?.('button, [role="button"], [role="option"], [role="menuitem"], [tabindex]') || leaf || null;
   }
 
   function elementLabel(element) {
@@ -452,7 +645,15 @@
   }
 
   function findRatioButton() {
-    return Array.from(document.querySelectorAll('button, [role="button"]')).find(el => {
+    const controls = Array.from(document.querySelectorAll('button, [role="button"]')).filter(el => {
+      if (!isVisible(el) || el.disabled) return false;
+      const tooltip = Array.from(el.querySelectorAll?.('[role="tooltip"]') || [])
+        .some(node => /rasio aspek/i.test(node.textContent || ''));
+      const gm3Dropdown = /WizButtonDropdownFilled-button/.test(el.className || '');
+      const label = elementLabel(el);
+      return tooltip || gm3Dropdown && (label.includes('lanskap') || label.includes('potret'));
+    });
+    return controls[0] || Array.from(document.querySelectorAll('button, [role="button"]')).find(el => {
       if (!isVisible(el) || el.disabled) return false;
       const label = elementLabel(el);
       return label === 'lanskap' || label === 'potret' || label.includes('rasio aspek');
@@ -460,7 +661,7 @@
   }
 
   function findRatioOption(wanted) {
-    return Array.from(document.querySelectorAll('button, [role="button"], [role="option"], [role="menuitem"]')).find(el => {
+    return Array.from(document.querySelectorAll('button, [role="button"], [role="option"], [role="menuitem"], [role="menuitemradio"]')).find(el => {
       if (!isVisible(el) || el.disabled) return false;
       const label = elementLabel(el);
       return wanted === 'potret' ? label.includes('potret 9:16') : label.includes('lanskap 16:9');
@@ -486,6 +687,18 @@
       ...getElementCenter(button)
     });
     if (!response?.success) throw new Error(response?.error || 'Trusted click gagal.');
+  }
+
+  async function trustedKeyPress(element, taskId, stage) {
+    if (!isVisible(element)) throw new Error('Target trusted key tidak terlihat.');
+    element.focus();
+    const response = await chrome.runtime.sendMessage({
+      type: 'TRUSTED_KEY',
+      taskId,
+      stage,
+      key: 'Enter'
+    });
+    if (!response?.success) throw new Error(response?.error || 'Trusted key gagal.');
   }
 
   function awaitVideoResult(existingUrls) {

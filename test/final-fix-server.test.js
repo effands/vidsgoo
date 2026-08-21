@@ -149,6 +149,32 @@ test('dashboard mutations reject foreign origins and queue creation rejects non-
   assert.equal(status.data.queue.length, 0);
 });
 
+test('queue supports deleting one non-active task without clearing its siblings', async () => {
+  const added = await api('/api/queue/add', {
+    method: 'POST',
+    origin: dashboardOrigin,
+    headers: { 'X-Dashboard-Request': 'Google-Vids-Dashboard' },
+    body: { prompts: 'Keep this\n\nDelete this', ratio: '16:9' }
+  });
+  assert.equal(added.response.status, 200);
+  const before = await api('/api/status');
+  const [keep, remove] = before.data.queue.slice(-2);
+  const deleted = await api(`/api/queue/${encodeURIComponent(remove.id)}`, {
+    method: 'DELETE',
+    origin: dashboardOrigin,
+    headers: { 'X-Dashboard-Request': 'Google-Vids-Dashboard' }
+  });
+  assert.equal(deleted.response.status, 200);
+  const after = await api('/api/status');
+  assert.ok(after.data.queue.some(task => task.id === keep.id));
+  assert.ok(!after.data.queue.some(task => task.id === remove.id));
+  await api(`/api/queue/${encodeURIComponent(keep.id)}`, {
+    method: 'DELETE',
+    origin: dashboardOrigin,
+    headers: { 'X-Dashboard-Request': 'Google-Vids-Dashboard' }
+  });
+});
+
 test('completion requires a positive verified download and matching active assignment', async () => {
   const add = await api('/api/queue/add', {
     method: 'POST',
