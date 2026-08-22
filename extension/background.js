@@ -54,6 +54,52 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .catch((error) => sendResponse({ success: false, error: error.message }));
     return true;
   }
+  if (message.type === 'TRUSTED_CLEAR_PROMPT') {
+    const tabId = sender?.tab?.id;
+    if (typeof tabId !== 'number') {
+      sendResponse({ success: false, error: 'Trusted clear harus berasal dari tab browser.' });
+      return false;
+    }
+    trustedClearPrompt(tabId)
+      .then(() => sendResponse({ success: true }))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
+  if (message.type === 'TRUSTED_INSERT_TEXT') {
+    const tabId = sender?.tab?.id;
+    if (typeof tabId !== 'number') {
+      sendResponse({ success: false, error: 'Trusted insert harus berasal dari tab browser.' });
+      return false;
+    }
+    trustedInsertText(tabId, message.text || '')
+      .then(() => sendResponse({ success: true }))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
+  if (message.type === 'TRUSTED_REPLACE_PROMPT') {
+    const tabId = sender?.tab?.id;
+    if (typeof tabId !== 'number') {
+      sendResponse({ success: false, error: 'Trusted replace harus berasal dari tab browser.' });
+      return false;
+    }
+    trustedReplacePrompt(tabId, message.text || '')
+      .then(() => sendResponse({ success: true }))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
+  if (message.type === 'TRUSTED_CLICK_SEQUENCE') {
+    // Melakukan serangkaian klik CDP dalam satu sesi attach/detach.
+    // Ini mencegah banner "DevTools disconnected" menutup popup menu.
+    const tabId = sender?.tab?.id;
+    if (typeof tabId !== 'number') {
+      sendResponse({ success: false, error: 'Trusted click sequence harus berasal dari tab browser.' });
+      return false;
+    }
+    trustedClickSequence(tabId, message.clicks || [], message.taskId)
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
   if (message.type === 'HARD_RELOAD_AND_RETRY') {
     const tabId = sender?.tab?.id;
     if (typeof tabId !== 'number') {
@@ -105,7 +151,17 @@ async function executeTaskOnTab(task) {
     if (task.url && !isGoogleVidsUrl(task.url)) {
       throw new Error('URL task harus berada di Google Vids.');
     }
-    let [targetTab] = await chrome.tabs.query({ url: '*://docs.google.com/videos/*' });
+    let tabs = await chrome.tabs.query({ url: '*://docs.google.com/videos/*' });
+    let targetTab = null;
+    if (task.url) {
+      targetTab = tabs.find(t => t.url && t.url.split('#')[0] === task.url.split('#')[0]) || tabs[0];
+      if (targetTab && targetTab.url && targetTab.url.split('#')[0] !== task.url.split('#')[0]) {
+        await chrome.tabs.update(targetTab.id, { url: task.url, active: true });
+        await delay(6000);
+      }
+    } else {
+      targetTab = tabs[0];
+    }
     if (!targetTab) {
       targetTab = await chrome.tabs.create({ url: task.url || 'https://docs.google.com/videos/create?usp=vids_alc&authuser=0' });
       await delay(8000);
@@ -158,12 +214,11 @@ async function trustedClick(tabId, x, y, stage = '') {
     if (!isGoogleVidsUrl(attachedTab.url)) {
       throw new Error('Tab berpindah dari Google Vids sebelum trusted click.');
     }
-    // Koordinat sudah dihitung dari elemen yang terlihat oleh content script.
-    // Runtime.evaluate di halaman Vids dapat menggantung dan meninggalkan debugger
-    // tetap terpasang, sehingga klik Video AI berikutnya tidak pernah terkirim.
-    // Chrome menambahkan infobar debugger sesudah attach dan menggeser viewport ke
-    // bawah. Kompensasi tinggi infobar agar klik tetap mengenai kontrol asal.
-    y += 36;
+    const liveCenter = stage ? await resolveClickCenter(debuggee, stage) : null;
+    if (liveCenter) {
+      x = liveCenter.x;
+      y = liveCenter.y;
+    }
     await chrome.debugger.sendCommand(debuggee, 'Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
     await chrome.debugger.sendCommand(debuggee, 'Input.dispatchMouseEvent', {
       type: 'mousePressed', x, y, button: 'left', clickCount: 1
@@ -186,7 +241,8 @@ async function trustedKey(tabId, key = 'Enter') {
     if (!/already attached|another debugger is already attached/i.test(String(error?.message || error))) throw error;
   }
   try {
-    const keyCode = key === 'Enter' ? 13 : 0;
+    const keyCodeMap = { Enter: 13, ArrowDown: 40, ArrowUp: 38, Space: 32, Escape: 27 };
+    const keyCode = keyCodeMap[key] || (key === 'Enter' ? 13 : 0);
     const params = { key, code: key, windowsVirtualKeyCode: keyCode, nativeVirtualKeyCode: keyCode };
     await chrome.debugger.sendCommand(debuggee, 'Input.dispatchKeyEvent', { type: 'rawKeyDown', ...params });
     await chrome.debugger.sendCommand(debuggee, 'Input.dispatchKeyEvent', { type: 'keyUp', ...params });
@@ -195,13 +251,124 @@ async function trustedKey(tabId, key = 'Enter') {
   }
 }
 
+async function trustedClearPrompt(tabId) {
+  const tab = await chrome.tabs.get(tabId);
+  if (!isGoogleVidsUrl(tab.url)) throw new Error('Trusted clear hanya diizinkan pada Google Vids.');
+  const debuggee = { tabId };
+  try {
+    await chrome.debugger.attach(debuggee, '1.3');
+  } catch (error) {
+    if (!/already attached|another debugger is already attached/i.test(String(error?.message || error))) throw error;
+  }
+  try {
+    const send = params => chrome.debugger.sendCommand(debuggee, 'Input.dispatchKeyEvent', params);
+    await send({ type: 'rawKeyDown', key: 'Control', code: 'ControlLeft', windowsVirtualKeyCode: 17, nativeVirtualKeyCode: 17, modifiers: 2 });
+    await send({ type: 'rawKeyDown', key: 'a', code: 'KeyA', windowsVirtualKeyCode: 65, nativeVirtualKeyCode: 65, modifiers: 2 });
+    await send({ type: 'keyUp', key: 'a', code: 'KeyA', windowsVirtualKeyCode: 65, nativeVirtualKeyCode: 65, modifiers: 2 });
+    await send({ type: 'keyUp', key: 'Control', code: 'ControlLeft', windowsVirtualKeyCode: 17, nativeVirtualKeyCode: 17 });
+    await send({ type: 'rawKeyDown', key: 'Backspace', code: 'Backspace', windowsVirtualKeyCode: 8, nativeVirtualKeyCode: 8 });
+    await send({ type: 'keyUp', key: 'Backspace', code: 'Backspace', windowsVirtualKeyCode: 8, nativeVirtualKeyCode: 8 });
+  } finally {
+    try { await chrome.debugger.detach(debuggee); } catch (_) {}
+  }
+}
+
+async function trustedInsertText(tabId, text) {
+  const tab = await chrome.tabs.get(tabId);
+  if (!isGoogleVidsUrl(tab.url)) throw new Error('Trusted insert hanya diizinkan pada Google Vids.');
+  const value = String(text || '');
+  if (!value) throw new Error('Teks prompt kosong.');
+  const debuggee = { tabId };
+  try {
+    await chrome.debugger.attach(debuggee, '1.3');
+  } catch (error) {
+    if (!/already attached|another debugger is already attached/i.test(String(error?.message || error))) throw error;
+  }
+  try {
+    await chrome.debugger.sendCommand(debuggee, 'Input.insertText', { text: value });
+  } finally {
+    try { await chrome.debugger.detach(debuggee); } catch (_) {}
+  }
+}
+
+async function trustedReplacePrompt(tabId, text) {
+  const tab = await chrome.tabs.get(tabId);
+  if (!isGoogleVidsUrl(tab.url)) throw new Error('Trusted replace hanya diizinkan pada Google Vids.');
+  const value = String(text || '');
+  if (!value) throw new Error('Teks prompt kosong.');
+  const debuggee = { tabId };
+  try {
+    await chrome.debugger.attach(debuggee, '1.3');
+  } catch (error) {
+    if (!/already attached|another debugger is already attached/i.test(String(error?.message || error))) throw error;
+  }
+  try {
+    const send = params => chrome.debugger.sendCommand(debuggee, 'Input.dispatchKeyEvent', params);
+    await send({ type: 'rawKeyDown', key: 'Control', code: 'ControlLeft', windowsVirtualKeyCode: 17, nativeVirtualKeyCode: 17, modifiers: 2 });
+    await send({ type: 'rawKeyDown', key: 'a', code: 'KeyA', windowsVirtualKeyCode: 65, nativeVirtualKeyCode: 65, modifiers: 2 });
+    await send({ type: 'keyUp', key: 'a', code: 'KeyA', windowsVirtualKeyCode: 65, nativeVirtualKeyCode: 65, modifiers: 2 });
+    await send({ type: 'keyUp', key: 'Control', code: 'ControlLeft', windowsVirtualKeyCode: 17, nativeVirtualKeyCode: 17 });
+    await chrome.debugger.sendCommand(debuggee, 'Input.insertText', { text: value });
+  } finally {
+    try { await chrome.debugger.detach(debuggee); } catch (_) {}
+  }
+}
+
+// Menjalankan beberapa klik CDP dalam SATU sesi attach/detach.
+// Kritis untuk menu popup: CDP detach memicu blur yang menutup popup.
+// Dengan attach sekali dan klik semua target tanpa detach di tengah,
+// popup tetap terbuka saat klik opsi mendarat.
+async function trustedClickSequence(tabId, clicks, taskId) {
+  const tab = await chrome.tabs.get(tabId);
+  if (!isGoogleVidsUrl(tab.url)) throw new Error('Trusted click sequence hanya diizinkan pada Google Vids.');
+
+  const debuggee = { tabId };
+  try {
+    await chrome.debugger.attach(debuggee, '1.3');
+  } catch (error) {
+    if (!/already attached|another debugger is already attached/i.test(String(error?.message || error))) throw error;
+  }
+
+  try {
+    for (const click of clicks) {
+      // Resolve koordinat terbaru dari DOM (opsi mungkin baru muncul)
+      let { x, y } = click;
+      if (click.stage) {
+        const liveCenter = await resolveClickCenter(debuggee, click.stage);
+        if (liveCenter) { x = liveCenter.x; y = liveCenter.y; }
+      }
+      await chrome.debugger.sendCommand(debuggee, 'Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+      await chrome.debugger.sendCommand(debuggee, 'Input.dispatchMouseEvent', {
+        type: 'mousePressed', x, y, button: 'left', clickCount: 1
+      });
+      await chrome.debugger.sendCommand(debuggee, 'Input.dispatchMouseEvent', {
+        type: 'mouseReleased', x, y, button: 'left', clickCount: 1
+      });
+
+      if (click.taskId && click.stage) {
+        await postJson('/api/extension/task-progress', {
+          taskId: click.taskId || taskId,
+          stage: click.stage,
+          extId: instanceId
+        }).catch(() => {});
+      }
+
+      // Jeda antar klik agar DOM punya waktu merespons (popup muncul, dsb.)
+      if (click.delayAfter) {
+        await delay(click.delayAfter);
+      }
+    }
+  } finally {
+    // Detach HANYA setelah semua klik selesai
+    try { await chrome.debugger.detach(debuggee); } catch (_) {}
+  }
+}
+
 async function hardReloadAndRetry(tabId, taskId, error = '') {
   const tab = await chrome.tabs.get(tabId);
   if (!isGoogleVidsUrl(tab.url)) throw new Error('Hard reload hanya diizinkan pada Google Vids.');
-  // Awalan ini juga dikenali server yang sedang berjalan, jadi retry tetap
-  // langsung walau server belum sempat direstart untuk memuat pola baru.
-  await reportFailure(taskId, `tombol Buat tidak ditemukan setelah 30 detik. RETRY_AFTER_HARD_RELOAD: ${error || 'form affiliate gagal dibersihkan'}`);
-  await chrome.tabs.reload(tabId, { bypassCache: true });
+  const result = await reportFailure(taskId, `RETRY_AFTER_HARD_RELOAD: ${error || 'Google Vids perlu dimuat ulang'}`);
+  if (result?.retryable !== false) await chrome.tabs.reload(tabId, { bypassCache: true });
 }
 
 async function resolveClickCenter(debuggee, stage) {
@@ -213,27 +380,134 @@ async function resolveClickCenter(debuggee, stage) {
       const visible = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
       const label = el => [el.textContent, el.getAttribute('aria-label'), el.getAttribute('data-tooltip')]
         .filter(Boolean).join(' ').trim().replace(/\\s+/g, ' ').toLowerCase();
-      const controls = [...document.querySelectorAll('button,[role="button"],[role="tab"],div[tabindex]')].filter(visible);
+
+      // Untuk button Google Wiz: klik ke span[class*="button__touch"] bukan ke button sendiri
+      // Struktur: button > span[1]:Ripple, span[2]:button__touch, span[3]:icon-leading,
+      //           span[4]:button__label (V67aGc), span[5]:icon-dropdown
+      const wizTouch = btn => {
+        if (!btn) return null;
+        const t = btn.querySelector('span[class*="button__touch"]') ||
+                  btn.querySelector('span[class*="-button__touch"]');
+        return (t && visible(t)) ? t : btn;
+      };
+      const center = el => { const r = el.getBoundingClientRect(); return { x: r.left + r.width/2, y: r.top + r.height/2 }; };
+
+      const controls = [...document.querySelectorAll('button,[role="button"],[role="tab"],[role="menuitem"],[role="menuitemradio"],[role="option"],[role="listitem"],div[tabindex],div[class*="menuitem"],div[class*="MenuItem"],div[class*="item"],li,span,div')].filter(visible);
       let el = null;
       if (stage.includes('membuka panel video ai')) {
-        el = controls.find(x => (x.getAttribute('aria-label') || '').toLowerCase() === 'buat klip video ai');
+        el = document.getElementById('content-library-rail-video-generation-element') ||
+             controls.find(x => {
+               const id = (x.id || '').toLowerCase();
+               const aria = (x.getAttribute('aria-label') || '').toLowerCase();
+               const tooltip = (x.getAttribute('data-tooltip') || '').toLowerCase();
+               const l = label(x);
+               return id.includes('video-generation') ||
+                      aria === 'buat klip video ai' || aria.includes('buat klip video ai') ||
+                      aria === 'video ai' || aria.includes('video ai') ||
+                      tooltip.includes('buat klip video ai') || tooltip.includes('video ai') ||
+                      l === 'video ai' || l.includes('video ai') ||
+                      (x.querySelector && x.querySelector('.docs-icon-video-generation-20'));
+             });
+      } else if (stage.includes('bersihkan prompt buat video')) {
+        const labels = [...document.querySelectorAll('button span, [role="button"] span')].filter(visible);
+        const clearLabel = labels.find(x => label(x) === 'hapus');
+        const clearButton = clearLabel?.closest?.('button,[role="button"]');
+        el = clearButton && visible(clearButton) ? wizTouch(clearButton) : clearLabel;
       } else if (stage === 'rendering') {
-        el = controls.find(x => x.getAttribute('role') !== 'tab' && ['buat','kirim'].includes(label(x)));
+        // Bottom-up: cari div touch layer dulu → naik ke button via closest()
+        // Ini cara paling andal karena class IconButtonFilled bisa ada di parent, bukan di <button>
+        const isBuatTooltip = t => { const s = (t?.textContent || '').trim().toLowerCase(); return s === 'buat' || s === 'kirim'; };
+        const notTambahkan = btn => { const t = (btn.textContent || '').trim().toLowerCase().replace(/\s+/g,' '); return t !== 'tambahkan' && !t.startsWith('tambah'); };
+
+        // Pass 1: div[class*="icon-button__touch"] → closest button → cek tooltip
+        const touchDivs = [...document.querySelectorAll('div[class*="icon-button__touch"]')];
+        let genBtn = null;
+        for (const div of touchDivs) {
+          const btn = div.closest('button,[role="button"]');
+          if (!btn || !visible(btn) || btn.disabled || btn.getAttribute('role') === 'tab') continue;
+          if (!notTambahkan(btn)) continue;
+          // Verifikasi via aria-describedby
+          const tipId = btn.getAttribute('aria-describedby');
+          if (tipId && isBuatTooltip(document.getElementById(tipId))) { genBtn = btn; break; }
+          // Verifikasi via sibling/grandparent tooltip
+          const par = btn.parentElement;
+          if (par) {
+            const tip = par.querySelector('[role="tooltip"],[class*="Tooltip"]');
+            if (isBuatTooltip(tip)) { genBtn = btn; break; }
+            const gpar = par.parentElement;
+            if (gpar) {
+              const tip2 = gpar.querySelector('[role="tooltip"],[class*="Tooltip"]');
+              if (isBuatTooltip(tip2)) { genBtn = btn; break; }
+            }
+          }
+          // Tidak ada tooltip — tetap ambil (kandidat kuat)
+          if (!genBtn) genBtn = btn;
+        }
+        if (!genBtn) {
+          // Pass 2: aria/tooltip langsung di button
+          const allBtns = [...document.querySelectorAll('button,[role="button"]')].filter(visible);
+          for (const btn of allBtns) {
+            if (btn.getAttribute('role') === 'tab' || !notTambahkan(btn)) continue;
+            const tipId = btn.getAttribute('aria-describedby');
+            if (tipId && isBuatTooltip(document.getElementById(tipId))) { genBtn = btn; break; }
+            const aria = (btn.getAttribute('aria-label') || '').toLowerCase();
+            const tt = (btn.getAttribute('data-tooltip') || '').toLowerCase();
+            if (aria === 'buat' || aria === 'kirim' || tt === 'buat' || tt === 'kirim') { genBtn = btn; break; }
+          }
+        }
+        if (genBtn) {
+          // Gunakan div touch layer untuk koordinat CDP
+          const divT = genBtn.querySelector('div[class*="icon-button__touch"]') || genBtn.querySelector('div[class*="button__touch"]');
+          el = (divT && visible(divT)) ? divT : genBtn;
+        }
+
       } else if (stage.includes('form buat') || stage === 'submitting') {
-        el = controls.find(x => (x.getAttribute('aria-label') || '').toLowerCase() === 'luaskan');
-      } else if (stage.includes('rasio')) {
-        const wanted = stage.includes('9:16') ? 'potret 9:16' : stage.includes('16:9') ? 'lanskap 16:9' : 'rasio aspek';
-        el = controls.find(x => label(x).includes(wanted));
+        el = controls.find(x => ['luaskan', 'expand'].includes((x.getAttribute('aria-label') || '').toLowerCase()) || ['luaskan', 'expand'].includes((x.getAttribute('data-tooltip') || '').toLowerCase()));
+      } else if (stage.includes('memilih rasio')) {
+        // Klik OPSI di popup menu — cari elemen dengan teks yang tepat
+        const wanted = stage.includes('9:16') ? 'potret' : stage.includes('1:1') ? 'persegi' : 'lanskap';
+        const matchRatio = (t, w) => {
+          const s = (t || '').trim().replace(/\\s+/g, ' ').toLowerCase();
+          if (w === 'potret') return (s.includes('potret') || s.includes('9:16')) && !s.includes('16:9') && !s.includes('lanskap');
+          if (w === 'persegi') return (s.includes('persegi') || s.includes('1:1')) && !s.includes('16:9') && !s.includes('9:16');
+          return (s.includes('lanskap') || s.includes('16:9')) && !s.includes('9:16') && !s.includes('potret');
+        };
+        // Cari di popup menu — prioritaskan role=menuitem/option/listitem
+        const menuItems = [...document.querySelectorAll('[role="menuitem"],[role="option"],[role="menuitemradio"],[role="listitem"],li')].filter(visible);
+        el = menuItems.find(x => matchRatio(label(x), wanted));
+        if (!el) {
+          // Fallback: semua elemen visible yang cocok, ambil yang terdalam (last)
+          const all = [...document.querySelectorAll('*')].filter(visible);
+          const matched = all.filter(x => matchRatio(x.textContent?.trim().replace(/\\s+/g,' ').toLowerCase(), wanted) && x.children.length === 0);
+          el = matched[matched.length - 1] || null;
+        }
+      } else if (stage.includes('membuka pilihan rasio') || (stage.includes('rasio') && !stage.includes('memilih'))) {
+        // Klik DROPDOWN BUTTON — targetkan button__touch span di dalamnya
+        const matchAnyRatioName = l => ['lanskap', 'landscape', 'potret', 'portrait', 'persegi', 'square'].some(k => l.includes(k));
+        // Cari button yang memiliki label__label span dengan teks ratio
+        const ratioBtn = [...document.querySelectorAll('button')].filter(visible).find(btn => {
+          const labelSpan = btn.querySelector('span[class*="button__label"],[jsname="V67aGc"]');
+          if (labelSpan) return matchAnyRatioName(labelSpan.textContent?.toLowerCase() || '');
+          return matchAnyRatioName(label(btn));
+        }) || controls.find(x => {
+          const l = label(x);
+          return (l.includes('rasio') || l.includes('aspect') || matchAnyRatioName(l)) &&
+                 (x.className?.includes('Dropdown') || x.getAttribute('aria-haspopup') || l.includes('rasio') || l.includes('aspect'));
+        });
+        if (ratioBtn) {
+          // Kembalikan koordinat button__touch span, bukan button langsung
+          el = wizTouch(ratioBtn);
+        }
       } else if (stage.includes('tambah gambar')) {
         el = controls.find(x => label(x) === 'bahan');
       }
       if (!el) return null;
-      const r = el.getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      return center(el);
     })()`
   });
   return result?.result?.value || null;
 }
+
 
 async function downloadGeneratedVideo({ videoUrl, taskId, folder }) {
   try {
@@ -304,13 +578,13 @@ function waitForDownload(downloadId) {
 }
 
 async function reportFailure(taskId, error) {
-  if (reportedTaskFailures.has(taskId)) return;
+  if (reportedTaskFailures.has(taskId)) return null;
   reportedTaskFailures.add(taskId);
   busy = false;
   currentTaskId = null;
   currentDownloadId = null;
   try {
-    await postJson('/api/extension/fail-task', { taskId, extId: instanceId, error });
+    return await postJson('/api/extension/fail-task', { taskId, extId: instanceId, error });
   } finally {
     pollServer();
   }

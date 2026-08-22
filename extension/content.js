@@ -1,6 +1,10 @@
 (function() {
+  if (globalThis.__VIDS_GOO_CONTENT_SCRIPT_ACTIVE__) return;
+  globalThis.__VIDS_GOO_CONTENT_SCRIPT_ACTIVE__ = true;
+
   const cancelledTasks = new Set();
   let activeTaskId = null;
+  let lastAffiliateImagesKey = null;
   function ping() { chrome.runtime.sendMessage({ type: 'HEARTBEAT' }, () => void chrome.runtime.lastError); }
   ping();
   setInterval(ping, 3000);
@@ -23,33 +27,46 @@
     return true;
   });
 
+  function isVideoAiPanelOpen() {
+    const videoAiBtn = document.getElementById('content-library-rail-video-generation-element') ||
+                       document.querySelector('[data-tooltip="Buat klip video AI"], [aria-label="Buat klip video AI"], [aria-label="Video AI"]');
+    if (videoAiBtn && videoAiBtn.getAttribute('aria-pressed') === 'true') {
+      return true;
+    }
+    const promptBox = findAffiliateAiPromptBox() || findAiPromptBox();
+    if (promptBox && isVisible(promptBox)) return true;
+    return false;
+  }
+
   async function runDirectAutomation({ prompt, ratio, taskId, folder, images, mode }) {
     activeTaskId = taskId;
     cancelledTasks.delete(taskId);
     const isAffiliate = mode === 'affiliate';
 
+    if (!isAffiliate) await closeStandardStartupDialog(taskId);
+
     // 1. Pastikan panel 'Video AI' di toolbar sisi kanan terbuka
     const findTaskPromptBox = isAffiliate ? findAffiliateAiPromptBox : findAiPromptBox;
     let promptBox = findTaskPromptBox();
-    if (!promptBox) {
+    if (!promptBox && !isVideoAiPanelOpen()) {
       console.log('[Content] Panel Video AI belum terbuka. Membuka tombol Video AI di toolbar kanan...');
-      let lastOpenError = null;
-      for (let attempt = 1; attempt <= 3 && !promptBox; attempt++) {
-        const videoAiButton = await waitFor(findVideoAiButton, 10000, 250, 'tombol Video AI pada toolbar kanan');
-        videoAiButton.scrollIntoView?.({ block: 'center' });
-        try {
-          await trustedClick(videoAiButton, taskId, 'Membuka Panel Video AI' + (attempt > 1 ? ' (percobaan ' + attempt + ')' : ''));
-        } catch (_) {
-          simulateClick(videoAiButton);
-        }
-        try {
-          promptBox = await waitFor(findTaskPromptBox, 6000, 250, 'kotak prompt Google Vids');
-        } catch (error) {
-          lastOpenError = error;
-          promptBox = findTaskPromptBox();
-        }
+      const videoAiButton = await waitFor(findVideoAiButton, 10000, 250, 'tombol Video AI pada toolbar kanan');
+      videoAiButton.scrollIntoView?.({ block: 'center' });
+      try {
+        await trustedClick(videoAiButton, taskId, 'Membuka Panel Video AI');
+      } catch (_) {
+        simulateClick(videoAiButton);
       }
-      if (!promptBox) throw lastOpenError || new Error('Panel Video AI gagal dibuka setelah 3 percobaan.');
+    }
+    try {
+      promptBox = await waitFor(findTaskPromptBox, 15000, 250, 'kotak prompt Google Vids');
+    } catch (error) {
+        await chrome.runtime.sendMessage({
+          type: 'HARD_RELOAD_AND_RETRY',
+          taskId,
+          error: 'VIDEO_AI_CLICK_FAILED: Panel Video AI tidak terbuka setelah satu klik.'
+        });
+      throw new Error(`RETRY_AFTER_HARD_RELOAD: ${error.message}`);
     }
 
     let createButton;
@@ -65,8 +82,14 @@
         catch (_) { simulateClick(expandButton); }
         promptBox = await waitFor(findAffiliateAiPromptBox, 15000, 250, 'kotak prompt Google Vids yang diperluas');
       }
+      const requestedImages = Array.isArray(images) ? images : [];
+      const referencesPresent = requestedImages.length > 0 && requestedImages.every(image =>
+        hasReferenceTag(String(image?.tag || '').replace(/^@/, ''))
+      );
+      const reuseImages = shouldReuseAffiliateImages(lastAffiliateImagesKey, requestedImages, referencesPresent);
       try {
-        await clearPreviousAffiliateComposer(promptBox, taskId);
+        if (reuseImages) await clearPromptBox(promptBox);
+        else await clearPreviousAffiliateComposer(promptBox, taskId);
       } catch (error) {
         await chrome.runtime.sendMessage({
           type: 'HARD_RELOAD_AND_RETRY',
@@ -76,14 +99,26 @@
         throw new Error(`RETRY_AFTER_HARD_RELOAD: ${error.message}`);
       }
       promptBox = await waitFor(findAffiliateAiPromptBox, 15000, 200, 'kotak prompt affiliate setelah dibersihkan');
-      if (Array.isArray(images) && images.length > 0) await attachImagesToVids(images, promptBox, taskId, true);
+      await selectVidsRatio(ratio, taskId);
+      if (!reuseImages && requestedImages.length > 0) {
+        await attachImagesToVids(requestedImages, promptBox, taskId, true);
+        lastAffiliateImagesKey = affiliateImagesKey(requestedImages);
+      }
       await typePromptWithMentions(promptBox, prompt, taskId);
-      await selectAffiliateVidsRatio(ratio, taskId);
       createButton = await waitFor(findCreateButton, 30000, 250, 'tombol Buat / Kirim');
     } else {
       // Pertahankan alur video biasa yang lama; perubahan affiliate tidak boleh masuk ke jalur ini.
       if (Array.isArray(images) && images.length > 0) await attachImagesToVids(images, promptBox, taskId);
-      await typePromptWithMentions(promptBox, prompt, taskId);
+      try {
+        const isFollowUpVideo = !/_0$/.test(String(taskId || ''));
+        await typePromptWithMentions(promptBox, prompt, taskId, isFollowUpVideo);
+      } catch (error) {
+        if (/STANDARD_PROMPT_(?:CLEANUP|INPUT)_FAILED/i.test(error.message)) {
+          await chrome.runtime.sendMessage({ type: 'HARD_RELOAD_AND_RETRY', taskId, error: error.message });
+          throw new Error(`RETRY_AFTER_HARD_RELOAD: ${error.message}`);
+        }
+        throw error;
+      }
       const expandButton = findButton(button => isVisible(button) && button.getAttribute('aria-label') === 'Luaskan');
       if (expandButton) {
         try { await trustedClick(expandButton, taskId, 'Submitting'); }
@@ -102,6 +137,46 @@
     const response = await chrome.runtime.sendMessage({ type: 'DOWNLOAD_VIDEO_FILE', videoUrl, taskId, folder: folder || '' });
     if (!response?.success) throw new Error(response?.error || 'Background gagal mengunduh video.');
     return { videoUrl, downloadId: response.downloadId };
+  }
+
+  function findStandardStartupDialogCloseButton() {
+    const dialogs = Array.from(document.querySelectorAll('[role="dialog"], [aria-modal="true"]'));
+    const dialog = dialogs.find(element => {
+      if (!isVisible(element)) return false;
+      const text = String(element.textContent || '').toLowerCase();
+      return text.includes('ayo mulai berkreasi') ||
+        (text.includes('buat video ai') && text.includes('video kosong'));
+    });
+    if (!dialog) return null;
+
+    const controls = Array.from(dialog.querySelectorAll('button, [role="button"], [aria-label], [title]'))
+      .filter(isVisible);
+    const labelledClose = controls.find(control => {
+      const label = `${control.getAttribute('aria-label') || ''} ${control.getAttribute('title') || ''}`.toLowerCase();
+      return /(?:tutup|close)/.test(label);
+    });
+    if (labelledClose) return labelledClose;
+
+    const dialogRect = dialog.getBoundingClientRect();
+    return controls.find(control => {
+      const rect = control.getBoundingClientRect();
+      const right = Number.isFinite(rect.right) ? rect.right : rect.left + rect.width;
+      return rect.width <= 64 && rect.height <= 64 &&
+        right >= dialogRect.left + dialogRect.width - 96 &&
+        rect.top <= dialogRect.top + 96;
+    }) || null;
+  }
+
+  async function closeStandardStartupDialog(taskId) {
+    const closeButton = findStandardStartupDialogCloseButton();
+    if (!closeButton) return false;
+    try {
+      await trustedClick(closeButton, taskId, 'Menutup dialog awal Google Vids');
+    } catch (_) {
+      simulateClick(closeButton);
+    }
+    await waitFor(() => findStandardStartupDialogCloseButton() ? null : true, 5000, 150, 'dialog awal Google Vids tertutup');
+    return true;
   }
 
   function findAiPromptBox() {
@@ -139,42 +214,53 @@
     ));
     return inputs.find(el => {
       if (!isVisible(el)) return false;
-      const rect = el.getBoundingClientRect();
-      if (rect.left < window.innerWidth * 0.62) return false;
       const aria = (el.getAttribute('aria-label') || '').toLowerCase();
       const placeholder = (el.getAttribute('placeholder') || '').toLowerCase();
       const semanticPrompt = ['deskripsikan', 'perintah', 'prompt', 'video']
         .some(word => aria.includes(word) || placeholder.includes(word));
+      if (semanticPrompt) return true;
       const panel = el.closest?.('[role="complementary"]') || el.parentElement;
       const panelText = (panel?.textContent || '').toLowerCase();
-      return semanticPrompt || panelText.includes('buat') || panelText.includes('animasi');
+      return panelText.includes('buat') || panelText.includes('animasi');
     }) || null;
   }
 
   function findVideoAiButton() {
-    // 1. Target exact Google Vids video-generation icon from DevTools
-    const icon = document.querySelector('.docs-icon-video-generation-20');
+    // 1. Target exact Google Vids element ID from DevTools
+    const exactId = document.getElementById('content-library-rail-video-generation-element');
+    if (exactId && isVisible(exactId)) return exactId;
+
+    // 2. Target exact data-tooltip or aria-label
+    const byAttr = document.querySelector(
+      '[data-tooltip="Buat klip video AI"], [aria-label="Buat klip video AI"], [id*="video-generation"]'
+    );
+    if (byAttr && isVisible(byAttr)) return byAttr;
+
+    // 3. Target exact Google Vids video-generation icon from DevTools
+    const icon = document.querySelector('.docs-icon-video-generation-20, [class*="video-generation"]');
     if (icon && isVisible(icon)) {
-      return icon.closest('.appsSketchyContentLibraryRailToolbarButtonRefreshed-outer-box') ||
+      return icon.closest('#content-library-rail-video-generation-element') ||
+             icon.closest('.appsSketchyContentLibraryRailToolbarButtonRefreshed-outer-box') ||
              icon.closest('.appsSketchyContentLibraryRailToolbarButtonRefreshed-inner-box') ||
              icon;
     }
 
-    // 2. Target exact label element
+    // 4. Target exact label element
     const labels = Array.from(document.querySelectorAll('.appsSketchyContentLibraryRailToolbarButtonLabelRefreshed'));
     const label = labels.find(l => isVisible(l) && (l.textContent || '').trim().toLowerCase() === 'video ai');
     if (label) {
-      return label.closest('.appsSketchyContentLibraryRailToolbarButtonRefreshed-outer-box') ||
+      return label.closest('#content-library-rail-video-generation-element') ||
+             label.closest('.appsSketchyContentLibraryRailToolbarButtonRefreshed-outer-box') ||
              label.closest('.appsSketchyContentLibraryRailToolbarButtonRefreshed-inner-box') ||
              label;
     }
 
-    // 3. Any toolbar button with class appsSketchyContentLibraryRailToolbarButton
+    // 5. Any toolbar button with class appsSketchyContentLibraryRailToolbarButton
     const outerBoxes = Array.from(document.querySelectorAll('.appsSketchyContentLibraryRailToolbarButtonRefreshed-outer-box, .appsSketchyContentLibraryRailToolbarButtonRefreshed-inner-box'));
     const box = outerBoxes.find(b => isVisible(b) && (b.textContent || '').toLowerCase().includes('video ai'));
     if (box) return box;
 
-    // 4. Fallback search across all buttons and clickable divs
+    // 6. Fallback search across all buttons and clickable divs
     const candidates = Array.from(document.querySelectorAll(
       'button, [role="button"], [role="tab"], [role="menuitem"], div[tabindex], div[aria-label], span[aria-label], div, span'
     ));
@@ -185,7 +271,7 @@
       const text = (el.textContent || '').trim().replace(/\s+/g, ' ').toLowerCase();
 
       if (aria === 'video ai' || aria.includes('video ai') || aria.includes('buat klip video ai') ||
-          tooltip === 'video ai' || tooltip.includes('video ai') ||
+          tooltip === 'video ai' || tooltip.includes('video ai') || tooltip.includes('buat klip video ai') ||
           text === 'video ai' || text.startsWith('video ai')) {
         const rect = el.getBoundingClientRect();
         return rect.width > 0 && rect.width < 250 && rect.height > 0 && rect.height < 250;
@@ -195,40 +281,86 @@
   }
 
   function findCreateButton() {
-    const candidates = Array.from(document.querySelectorAll('button, [role="button"], div[role="button"]'));
-    return candidates.find(button => {
-      if (!isVisible(button) || button.disabled) return false;
-      if (button.getAttribute('role') === 'tab') return false;
-      const text = (button.textContent || '').trim().toLowerCase();
-      const aria = (button.getAttribute('aria-label') || '').toLowerCase();
-      const tooltip = (button.getAttribute('data-tooltip') || '').toLowerCase();
+    // Tombol generate (biru bulat arrow-up) = IconButtonFilled.
+    // Struktur: button#elptr_NNN > [span.icon-slot, div.icon-button__touch]
+    // Strategi: cari dari bawah (div touch layer) → naik ke button parent.
 
-      if (text === 'buat' || aria === 'buat' || tooltip === 'buat' ||
-          text === 'kirim' || aria === 'kirim' || tooltip === 'kirim' ||
-          aria.includes('buat video') || aria.includes('kirim perintah')) {
-        return true;
-      }
+    const isBuatTooltip = el => {
+      const t = (el?.textContent || '').trim().toLowerCase();
+      return t === 'buat' || t === 'kirim';
+    };
+    const notTambahkan = btn => {
+      const text = (btn.textContent || '').trim().toLowerCase().replace(/\s+/g, ' ');
+      return text !== 'tambahkan' && !text.startsWith('tambah');
+    };
 
-      // Check blue circular submit button (arrow up icon)
-      const rect = button.getBoundingClientRect();
-      const isCircularSubmit = rect.width >= 24 && rect.width <= 70 && rect.height >= 24 && rect.height <= 70;
-      if (isCircularSubmit && (aria.includes('buat') || aria.includes('kirim') || aria.includes('submit') || tooltip === 'buat')) {
-        return true;
+    // --- Pass 1: cari div[class*="icon-button__touch"] → closest button ---
+    // ini paling spesifik karena hanya IconButtonFilled yang punya div touch layer
+    const touchDivs = Array.from(document.querySelectorAll('div[class*="icon-button__touch"]'));
+    for (const div of touchDivs) {
+      if (typeof div.closest !== 'function') continue;   // guard: mock DOM mungkin tidak punya closest()
+      const btn = div.closest('button, [role="button"]');
+      if (!btn || !isVisible(btn) || btn.disabled) continue;
+      if (btn.getAttribute('role') === 'tab') continue;
+      if (!notTambahkan(btn)) continue;
+
+      // Verifikasi: tooltip via aria-describedby
+      const tipId = btn.getAttribute('aria-describedby');
+      if (tipId) {
+        const tipEl = document.getElementById(tipId);
+        if (isBuatTooltip(tipEl)) return btn;
       }
-      return false;
-    });
+      // Verifikasi: tooltip sibling dalam parent
+      const parent = btn.parentElement;
+      if (parent) {
+        const tip = parent.querySelector('[role="tooltip"], [class*="Tooltip"]');
+        if (isBuatTooltip(tip)) return btn;
+        // Coba grandparent juga
+        const grandparent = parent.parentElement;
+        if (grandparent) {
+          const tip2 = grandparent.querySelector('[role="tooltip"], [class*="Tooltip"]');
+          if (isBuatTooltip(tip2)) return btn;
+        }
+      }
+      // Kalau tidak ada tooltip, tetap kembalikan sebagai kandidat kuat
+      // (asumsi: satu-satunya icon-button yang ada di area ini adalah generate)
+      return btn;
+    }
+
+    // --- Pass 2: aria-describedby → tooltip text = "Buat" ---
+    const allBtns = Array.from(document.querySelectorAll('button, [role="button"]'));
+    for (const btn of allBtns) {
+      if (!isVisible(btn) || btn.disabled) continue;
+      if (btn.getAttribute('role') === 'tab') continue;
+      if (!notTambahkan(btn)) continue;
+      const tipId = btn.getAttribute('aria-describedby');
+      if (tipId) {
+        const tipEl = document.getElementById(tipId);
+        if (isBuatTooltip(tipEl)) return btn;
+      }
+      const aria = (btn.getAttribute('aria-label') || '').toLowerCase();
+      const tooltip = (btn.getAttribute('data-tooltip') || '').toLowerCase();
+      if (aria === 'buat' || aria === 'kirim' || tooltip === 'buat' || tooltip === 'kirim') return btn;
+      if (aria.includes('buat video') || aria.includes('kirim perintah')) return btn;
+    }
+
+    // --- Pass 3: textContent persis "buat" (bukan tab/tambahkan) ---
+    return allBtns.find(btn => {
+      if (!isVisible(btn) || btn.disabled) return false;
+      if (btn.getAttribute('role') === 'tab') return false;
+      if (!notTambahkan(btn)) return false;
+      const text = (btn.textContent || '').trim().toLowerCase().replace(/\s+/g, ' ');
+      return text === 'buat' || text === 'kirim';
+    }) || null;
   }
+
 
   async function clickCreateAndConfirm(initialButton, taskId, existingUrls) {
     let button = initialButton;
     let lastError = null;
     for (let attempt = 1; attempt <= 3; attempt++) {
-      if (attempt === 1) {
-        simulateClick(button);
-      } else {
-        try { await trustedClick(button, taskId, 'Rendering'); }
-        catch (_) { simulateClick(button); }
-      }
+      try { await trustedClick(button, taskId, 'Rendering'); }
+      catch (_) { simulateClick(button); }
       try {
         await waitFor(() => isRenderStarted(existingUrls), 5000, 250, 'indikator proses render');
         return;
@@ -250,11 +382,33 @@
     });
   }
 
-  async function typePromptWithMentions(promptBox, promptText, taskId) {
+  async function typePromptWithMentions(promptBox, promptText, taskId, standardMode = false) {
     const raw = String(promptText ?? '').trim();
     if (!raw) throw new Error('Prompt kosong.');
     promptBox.focus();
 
+    if (standardMode) {
+      const clearCommandButton = findAffiliateComposerClearButton(promptBox);
+      if (clearCommandButton) {
+        try { await trustedClick(clearCommandButton, taskId, 'Bersihkan Prompt Buat Video'); }
+        catch (_) { simulateClick(clearCommandButton); }
+        promptBox = await waitFor(() => {
+          const current = findAiPromptBox();
+          return current && !readPrompt(current) ? current : null;
+        }, 5000, 150, 'composer Buat Video kosong setelah Hapus');
+        promptBox.focus();
+        insertTextAtCaret(promptBox, raw);
+        promptBox.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: raw }));
+        promptBox.dispatchEvent(new Event('change', { bubbles: true }));
+        return;
+      }
+      const response = await chrome.runtime.sendMessage({ type: 'TRUSTED_REPLACE_PROMPT', text: raw });
+      await new Promise(resolve => setTimeout(resolve, 350));
+      if (!response?.success) {
+        throw new Error('STANDARD_PROMPT_INPUT_FAILED: Prompt lama Google Vids tidak berhasil diganti.');
+      }
+      return;
+    }
     await clearPromptBox(promptBox);
 
     // Split text by mention tokens like @Gambar1, @Gambar2, @Gambar3
@@ -311,6 +465,29 @@
     throw new Error('Prompt lama Google Vids tidak berhasil dibersihkan.');
   }
 
+  async function clearStandardPromptBox(promptBox) {
+    if (!readPrompt(promptBox)) return;
+    promptBox.focus();
+    const response = await chrome.runtime.sendMessage({ type: 'TRUSTED_CLEAR_PROMPT' });
+    await new Promise(resolve => setTimeout(resolve, 350));
+    if (response?.success && !readPrompt(promptBox)) return;
+    await clearPromptBox(promptBox);
+    if (!readPrompt(promptBox)) return;
+    throw new Error('STANDARD_PROMPT_CLEANUP_FAILED: Prompt lama Google Vids tidak berhasil dibersihkan.');
+  }
+
+  async function insertStandardPrompt(promptBox, promptText) {
+    promptBox.focus();
+    await chrome.runtime.sendMessage({ type: 'TRUSTED_INSERT_TEXT', text: promptText });
+    await new Promise(resolve => setTimeout(resolve, 350));
+    if (readPrompt(promptBox) === normalizePrompt(promptText)) return;
+    insertTextAtCaret(promptBox, promptText);
+    promptBox.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: promptText }));
+    await new Promise(resolve => setTimeout(resolve, 150));
+    if (readPrompt(promptBox) === normalizePrompt(promptText)) return;
+    throw new Error('STANDARD_PROMPT_INPUT_FAILED: Prompt baru tidak masuk ke kotak Buat Video.');
+  }
+
   async function clearPreviousAffiliateComposer(promptBox, taskId) {
     const clearButton = findAffiliateComposerClearButton(promptBox);
     const hasPrompt = Boolean(readPrompt(promptBox));
@@ -329,11 +506,13 @@
 
   function findAffiliateComposerClearButton(promptBox) {
     const promptRect = promptBox.getBoundingClientRect();
-    const candidates = Array.from(document.querySelectorAll('button, [role="button"]')).filter(button => {
+    const panel = promptBox.closest?.('[role="complementary"]');
+    const scope = panel && typeof panel.querySelectorAll === 'function' ? panel : document;
+    const candidates = Array.from(scope.querySelectorAll('button, [role="button"]')).filter(button => {
       if (!isVisible(button) || button.disabled) return false;
       if (elementLabel(button) !== 'hapus') return false;
       const rect = button.getBoundingClientRect();
-      return rect.left > window.innerWidth * 0.62 && rect.top >= promptRect.top;
+      return rect.top >= promptRect.top;
     });
     return candidates.sort((a, b) =>
       Math.abs(a.getBoundingClientRect().top - promptRect.bottom) -
@@ -341,12 +520,27 @@
     )[0] || null;
   }
 
+  function affiliateImagesKey(images) {
+    return JSON.stringify((Array.isArray(images) ? images : []).map(image => [
+      String(image?.tag || ''),
+      String(image?.name || ''),
+      String(image?.dataUrl || '')
+    ]));
+  }
+
+  function shouldReuseAffiliateImages(cachedKey, images, referencesPresent) {
+    return Boolean(referencesPresent) && Array.isArray(images) && images.length > 0 &&
+      cachedKey === affiliateImagesKey(images);
+  }
+
   function hasAffiliateComposerReferences(promptBox) {
     const promptRect = promptBox.getBoundingClientRect();
-    return Array.from(document.querySelectorAll('[aria-label], [data-tooltip], span')).some(el => {
+    const panel = promptBox.closest?.('[role="complementary"]');
+    const scope = panel && typeof panel.querySelectorAll === 'function' ? panel : document;
+    return Array.from(scope.querySelectorAll('[aria-label], [data-tooltip], span')).some(el => {
       if (!isVisible(el)) return false;
       const rect = el.getBoundingClientRect();
-      if (rect.left < window.innerWidth * 0.62 || rect.top < promptRect.top) return false;
+      if (rect.top < promptRect.top) return false;
       return /^@?gambar\d+$/i.test((el.textContent || '').trim()) ||
         /gambar\d+/i.test(el.getAttribute('aria-label') || '') ||
         /gambar\d+/i.test(el.getAttribute('data-tooltip') || '');
@@ -520,12 +714,18 @@
       button: 0,
       buttons: 1
     };
-    el.dispatchEvent(new PointerEvent('pointerdown', opts));
-    el.dispatchEvent(new MouseEvent('mousedown', opts));
-    el.dispatchEvent(new PointerEvent('pointerup', { ...opts, buttons: 0 }));
-    el.dispatchEvent(new MouseEvent('mouseup', { ...opts, buttons: 0 }));
-    el.dispatchEvent(new MouseEvent('click', { ...opts, buttons: 0 }));
-    try { el.click(); } catch (_) {}
+    const targets = [el];
+    const inner = el.querySelector?.('.appsSketchyContentLibraryRailToolbarButtonRefreshed-inner-box, [class*="inner-box"], [role="button"], span, div');
+    if (inner && inner !== el) targets.push(inner);
+
+    for (const target of targets) {
+      target.dispatchEvent(new PointerEvent('pointerdown', opts));
+      target.dispatchEvent(new MouseEvent('mousedown', opts));
+      target.dispatchEvent(new PointerEvent('pointerup', { ...opts, buttons: 0 }));
+      target.dispatchEvent(new MouseEvent('mouseup', { ...opts, buttons: 0 }));
+      target.dispatchEvent(new MouseEvent('click', { ...opts, buttons: 0 }));
+      try { target.click(); } catch (_) {}
+    }
   }
 
   function normalizePrompt(value) {
@@ -536,31 +736,165 @@
     return normalizePrompt('value' in element ? element.value : element.innerText || element.textContent);
   }
 
+  function matchesRatio(text, wanted) {
+    const s = String(text || '').toLowerCase();
+    if (wanted === 'potret' || wanted === '9:16') {
+      return (s.includes('potret') || s.includes('portrait') || s.includes('9:16')) &&
+             !s.includes('16:9') && !s.includes('lanskap') && !s.includes('landscape');
+    }
+    if (wanted === 'persegi' || wanted === '1:1') {
+      return (s.includes('persegi') || s.includes('square') || s.includes('1:1')) &&
+             !s.includes('16:9') && !s.includes('9:16') && !s.includes('lanskap') && !s.includes('potret');
+    }
+    if (wanted === 'lanskap' || wanted === '16:9') {
+      return (s.includes('lanskap') || s.includes('landscape') || s.includes('16:9')) &&
+             !s.includes('9:16') && !s.includes('potret') && !s.includes('portrait');
+    }
+    return false;
+  }
+
+  // Struktur button Google Wiz:
+  //   DropdownFilled: button > span[1]:Ripple, span[2]:button__touch (SPAN), span[3]:icon-leading, span[4]:label, span[5]:dropdown
+  //   IconButtonFilled: button > span[1]:icon-button__icon-slot, div:icon-button__touch (DIV), span:ripple
+  //   → Klik harus ke elemen dengan class *button__touch / *icon-button__touch
+  function wizClickTarget(el) {
+    if (!el) return el;
+
+    // Prioritas 1: span[class*="button__touch"] — untuk DropdownFilled
+    const spanTouch = el.querySelector?.('span[class*="button__touch"]') ||
+                      el.querySelector?.('span[class*="ButtonDropdownFilled-button__touch"]') ||
+                      el.querySelector?.('span[class*="Filled-button__touch"]') ||
+                      el.querySelector?.('span[class*="-button__touch"]');
+    if (spanTouch && isVisible(spanTouch)) return spanTouch;
+
+    // Prioritas 2: div[class*="icon-button__touch"] — untuk IconButtonFilled (tombol generate bulat)
+    const divTouch = el.querySelector?.('div[class*="icon-button__touch"]') ||
+                     el.querySelector?.('div[class*="IconButtonFilled"]') ||
+                     el.querySelector?.('div[class*="button__touch"]');
+    if (divTouch && isVisible(divTouch)) return divTouch;
+
+    // Prioritas 3: span RippleRipple
+    const ripple = el.querySelector?.('span[class*="WizRippleRipple"]') ||
+                   el.querySelector?.('span[class*="RippleRipple"]') ||
+                   el.querySelector?.('span[class*="Ripple"]');
+    if (ripple && isVisible(ripple)) return ripple;
+
+    // Fallback: span ke-2 (button__touch biasanya urutan kedua di DropdownFilled)
+    const spans = el.querySelectorAll?.(':scope > span');
+    if (spans && spans.length >= 2 && isVisible(spans[1])) return spans[1];
+
+    return el;
+  }
+
+  function domClick(el) {
+    if (!el) return;
+    // Google Wiz buttons: klik harus ke span[3] (ripple/touch layer), bukan button langsung
+    const target = wizClickTarget(el);
+    try { target.scrollIntoView?.({ block: 'nearest', inline: 'nearest' }); } catch (_) {}
+    try { target.focus(); } catch (_) {}
+    const rect = target.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const base = { bubbles: true, cancelable: true, view: window, clientX: cx, clientY: cy };
+    target.dispatchEvent(new PointerEvent('pointerover',  { ...base, buttons: 0 }));
+    target.dispatchEvent(new PointerEvent('pointerenter', { ...base, buttons: 0 }));
+    target.dispatchEvent(new MouseEvent('mouseover',      { ...base, buttons: 0 }));
+    target.dispatchEvent(new MouseEvent('mouseenter',     { ...base, buttons: 0 }));
+    target.dispatchEvent(new PointerEvent('pointermove',  { ...base, buttons: 0 }));
+    target.dispatchEvent(new MouseEvent('mousemove',      { ...base, buttons: 0 }));
+    target.dispatchEvent(new PointerEvent('pointerdown',  { ...base, button: 0, buttons: 1 }));
+    target.dispatchEvent(new MouseEvent('mousedown',      { ...base, button: 0, buttons: 1 }));
+    target.dispatchEvent(new PointerEvent('pointerup',    { ...base, button: 0, buttons: 0 }));
+    target.dispatchEvent(new MouseEvent('mouseup',        { ...base, button: 0, buttons: 0 }));
+    target.dispatchEvent(new MouseEvent('click',          { ...base, button: 0, buttons: 0 }));
+    try { target.click(); } catch (_) {}
+    if (target !== el) { try { el.click(); } catch (_) {} }
+  }
+
   async function selectVidsRatio(ratio, taskId) {
-    const wanted = ratio === '9:16' ? 'potret' : 'lanskap';
+    const wanted = ratio === '9:16' ? 'potret' : ratio === '1:1' ? 'persegi' : 'lanskap';
     let lastError = null;
+
     for (let attempt = 1; attempt <= 3; attempt++) {
       const active = await waitFor(findRatioButton, 15000, 250, 'tombol rasio aspek');
-      if (elementLabel(active).includes(wanted)) return;
+      if (isRatioSelected(wanted)) {
+        console.log(`[Content] Rasio ${ratio} (${wanted}) sudah terpilih.`);
+        return;
+      }
 
+      console.log(`[Content] Membuka menu rasio aspek (percobaan ${attempt})...`);
+
+      // Dapatkan koordinat dropdown sebelum attach CDP
+      let dropdownCenter = getElementCenter(active);
+
+      // Periksa apakah opsi sudah terlihat (popup sudah terbuka)
       let option = findRatioOption(wanted);
+
       if (!option) {
-        try { await trustedClick(active, taskId, 'Membuka Pilihan Rasio'); }
-        catch (_) { simulateClick(active); }
-        option = await waitFor(() => findRatioOption(wanted), 5000, 200, 'pilihan rasio ' + ratio);
+        // Strategi utama: gunakan TRUSTED_CLICK_SEQUENCE — satu sesi CDP,
+        // klik dropdown lalu klik opsi tanpa detach di tengah.
+        // Ini mencegah blur/focus-loss yang menutup popup Google Vids.
+        try {
+          const optionStage = ratio === '9:16' ? 'Memilih Rasio 9:16' :
+                              ratio === '1:1' ? 'Memilih Rasio 1:1' :
+                              'Memilih Rasio 16:9';
+
+          await chrome.runtime.sendMessage({
+            type: 'TRUSTED_CLICK_SEQUENCE',
+            taskId,
+            clicks: [
+              {
+                // Klik 1: Buka dropdown
+                x: dropdownCenter.x,
+                y: dropdownCenter.y,
+                stage: 'Membuka Pilihan Rasio',
+                taskId,
+                delayAfter: 700  // Tunggu popup muncul
+              },
+              {
+                // Klik 2: Klik opsi (stage akan resolve koordinat opsi dari DOM)
+                x: dropdownCenter.x,
+                y: dropdownCenter.y,
+                stage: optionStage,
+                taskId,
+                delayAfter: 200
+              }
+            ]
+          });
+        } catch (seqErr) {
+          // Fallback: domClick biasa jika SEQUENCE gagal
+          domClick(active);
+          await new Promise(r => setTimeout(r, 600));
+          option = findRatioOption(wanted);
+          if (option) {
+            domClick(option);
+          }
+        }
+      } else {
+        // Opsi sudah terlihat — langsung klik opsi saja via sequence
+        try {
+          const optionStage = ratio === '9:16' ? 'Memilih Rasio 9:16' :
+                              ratio === '1:1' ? 'Memilih Rasio 1:1' :
+                              'Memilih Rasio 16:9';
+          await chrome.runtime.sendMessage({
+            type: 'TRUSTED_CLICK_SEQUENCE',
+            taskId,
+            clicks: [{
+              x: getElementCenter(option).x,
+              y: getElementCenter(option).y,
+              stage: optionStage,
+              taskId,
+              delayAfter: 200
+            }]
+          });
+        } catch (_) {
+          domClick(option);
+        }
       }
 
       try {
-        await trustedClick(option, taskId, 'Memilih Rasio ' + ratio + (attempt > 1 ? ' (percobaan ' + attempt + ')' : ''));
-      } catch (_) {
-        simulateClick(option);
-      }
-
-      try {
-        await waitFor(() => {
-          const selected = findRatioButton();
-          return selected && elementLabel(selected).includes(wanted) ? selected : null;
-        }, 3000, 200, 'konfirmasi rasio ' + ratio);
+        await waitFor(() => isRatioSelected(wanted), 4000, 200, 'konfirmasi rasio ' + ratio);
+        console.log(`[Content] Rasio ${ratio} (${wanted}) berhasil dikonfirmasi.`);
         return;
       } catch (error) {
         lastError = error;
@@ -569,108 +903,114 @@
     throw lastError || new Error('Rasio ' + ratio + ' tidak berhasil dipilih setelah 3 percobaan.');
   }
 
-  async function selectAffiliateVidsRatio(ratio, taskId) {
-    const wanted = ratio === '9:16' ? 'potret' : 'lanskap';
-    let lastError = null;
-    for (let attempt = 1; attempt <= 4; attempt++) {
-      const active = await waitFor(findRatioButton, 15000, 200, 'tombol rasio aspek affiliate');
-      if (elementLabel(active).includes(wanted)) return;
-
-      let option = findAffiliateRatioOption(wanted);
-      if (!option) {
-        // Google Vids mengabaikan click() DOM pada dropdown ini. Fokuskan elemen
-        // yang tepat lalu kirim Enter tepercaya agar tidak bergantung koordinat.
-        try { await trustedKeyPress(active, taskId, 'Membuka Pilihan Rasio'); }
-        catch (_) { simulateClick(active); }
-        try {
-          option = await waitFor(() => findAffiliateRatioOption(wanted), 2500, 100, 'pilihan rasio affiliate ' + ratio);
-        } catch (error) {
-          try { await trustedClick(active, taskId, 'Membuka Pilihan Rasio'); }
-          catch (_) { simulateClick(active); }
-          try {
-            option = await waitFor(() => findAffiliateRatioOption(wanted), 2500, 100, 'pilihan rasio affiliate ' + ratio);
-          } catch (fallbackError) {
-            lastError = fallbackError;
-            continue;
-          }
-        }
-      }
-
-      try { await trustedKeyPress(option, taskId, 'Memilih Rasio ' + ratio); }
-      catch (_) { simulateClick(option); }
-      try {
-        await waitFor(() => {
-          const selected = findRatioButton();
-          return selected && elementLabel(selected).includes(wanted) ? selected : null;
-        }, 1200, 100, 'konfirmasi rasio affiliate ' + ratio);
-        return;
-      } catch (error) {
-        lastError = error;
-        try { await trustedClick(option, taskId, 'Memilih Rasio ' + ratio); }
-        catch (_) { simulateClick(option); }
-        try {
-          await waitFor(() => {
-            const selected = findRatioButton();
-            return selected && elementLabel(selected).includes(wanted) ? selected : null;
-          }, 2500, 100, 'konfirmasi rasio affiliate ' + ratio);
-          return;
-        } catch (fallbackError) {
-          lastError = fallbackError;
-        }
-      }
-    }
-    throw lastError || new Error('Rasio affiliate ' + ratio + ' tidak berhasil dipilih.');
-  }
-
-  function findAffiliateRatioOption(wanted) {
-    const standardOption = findRatioOption(wanted);
-    if (standardOption) return standardOption;
-    const expected = wanted === 'potret' ? 'potret 9:16' : 'lanskap 16:9';
-    const matches = Array.from(document.querySelectorAll('body *')).filter(el => {
-      if (!isVisible(el) || el.disabled) return false;
-      const label = elementLabel(el);
-      if (!label.includes(expected)) return false;
-      const childWithSameLabel = Array.from(el.children || []).some(child =>
-        isVisible(child) && elementLabel(child).includes(expected)
-      );
-      return !childWithSameLabel;
-    });
-    const leaf = matches[0];
-    return leaf?.closest?.('button, [role="button"], [role="option"], [role="menuitem"], [tabindex]') || leaf || null;
-  }
-
   function elementLabel(element) {
     return [element?.textContent, element?.getAttribute?.('aria-label'), element?.getAttribute?.('data-tooltip')]
       .filter(Boolean).join(' ').trim().replace(/\s+/g, ' ').toLowerCase();
   }
 
   function findRatioButton() {
-    const controls = Array.from(document.querySelectorAll('button, [role="button"]')).filter(el => {
+    const promptBox = findAffiliateAiPromptBox() || findAiPromptBox();
+    const promptRect = promptBox ? promptBox.getBoundingClientRect() : null;
+    const allButtons = Array.from(document.querySelectorAll(
+      'button, [role="button"], div[role="button"], div[tabindex]'
+    ));
+
+    const dropdowns = allButtons.filter(el => {
       if (!isVisible(el) || el.disabled) return false;
-      const tooltip = Array.from(el.querySelectorAll?.('[role="tooltip"]') || [])
-        .some(node => /rasio aspek/i.test(node.textContent || ''));
-      const gm3Dropdown = /WizButtonDropdownFilled-button/.test(el.className || '');
+      const role = (el.getAttribute('role') || '').toLowerCase();
+      if (['option', 'menuitem', 'menuitemradio'].includes(role)) return false;
+
       const label = elementLabel(el);
-      return tooltip || gm3Dropdown && (label.includes('lanskap') || label.includes('potret'));
+      const aria = (el.getAttribute('aria-label') || '').toLowerCase();
+      const dataTooltip = (el.getAttribute('data-tooltip') || '').toLowerCase();
+      const hasTooltip = Array.from(el.querySelectorAll?.('[role="tooltip"]') || [])
+        .some(node => /rasio|aspect/i.test(node.textContent || ''));
+
+      if (hasTooltip || aria.includes('rasio') || aria.includes('aspect') || dataTooltip.includes('rasio') || dataTooltip.includes('aspect')) {
+        return true;
+      }
+
+      const isRatioName = ['lanskap', 'potret', 'persegi', 'landscape', 'portrait', 'square'].some(r =>
+        label === r || label.startsWith(r + ' ') || label.startsWith(r + '\n')
+      );
+      if (isRatioName) {
+        const parentRole = el.parentElement?.getAttribute?.('role') || '';
+        if (['menu', 'listbox', 'group'].includes(parentRole)) return false;
+        return true;
+      }
+      return false;
     });
-    return controls[0] || Array.from(document.querySelectorAll('button, [role="button"]')).find(el => {
+
+    if (dropdowns.length === 0) {
+      return allButtons.find(el => {
+        if (!isVisible(el) || el.disabled) return false;
+        const l = elementLabel(el);
+        return ['lanskap', 'potret', 'persegi'].some(r => l.includes(r));
+      }) || null;
+    }
+
+    if (promptRect && dropdowns.length > 1) {
+      const below = dropdowns.filter(el => el.getBoundingClientRect().top >= promptRect.top);
+      if (below.length > 0) return below[0];
+    }
+    return dropdowns[0];
+  }
+
+  function isRatioSelected(wanted) {
+    const active = findRatioButton();
+    if (active && isVisible(active)) {
+      const label = elementLabel(active);
+      if (matchesRatio(label, wanted)) return true;
+    }
+    return Array.from(document.querySelectorAll(
+      '[class*="WizButtonDropdownFilled-button"], [class*="ButtonDropdown"], [data-tooltip*="rasio" i], [aria-label*="rasio" i], [data-tooltip*="aspect" i], [aria-label*="aspect" i], button, [role="button"]'
+    )).some(el => {
       if (!isVisible(el) || el.disabled) return false;
+      const role = (el.getAttribute('role') || '').toLowerCase();
+      if (['option', 'menuitem', 'menuitemradio'].includes(role)) return false;
       const label = elementLabel(el);
-      return label === 'lanskap' || label === 'potret' || label.includes('rasio aspek');
-    }) || null;
+      return label.length < 40 && matchesRatio(label, wanted);
+    });
   }
 
   function findRatioOption(wanted) {
-    return Array.from(document.querySelectorAll('button, [role="button"], [role="option"], [role="menuitem"], [role="menuitemradio"]')).find(el => {
-      if (!isVisible(el) || el.disabled) return false;
-      const label = elementLabel(el);
-      return wanted === 'potret' ? label.includes('potret 9:16') : label.includes('lanskap 16:9');
-    }) || null;
+    const ratioBtn = findRatioButton();
+    const targetTexts = wanted === 'potret' || wanted === '9:16'
+      ? ['potret 9:16', 'potret (9:16)', 'potret']
+      : wanted === 'persegi' || wanted === '1:1'
+      ? ['persegi 1:1', 'persegi (1:1)', 'persegi']
+      : ['lanskap 16:9', 'lanskap (16:9)', 'lanskap'];
+
+    const all = Array.from(document.querySelectorAll(
+      'button, [role="button"], [role="option"], [role="menuitem"], [role="menuitemradio"], [role="listitem"], div, span, li'
+    ));
+    const matched = all.filter(el => {
+      if (!isVisible(el)) return false;
+      if (ratioBtn && (el === ratioBtn || (typeof ratioBtn.contains === 'function' && ratioBtn.contains(el)))) return false;
+      const text = (el.textContent || '').trim().replace(/\s+/g, ' ').toLowerCase();
+      if (wanted === 'potret' || wanted === '9:16') {
+        return targetTexts.some(t => text === t || text.includes(t)) && !text.includes('lanskap') && !text.includes('16:9');
+      }
+      if (wanted === 'persegi' || wanted === '1:1') {
+        return targetTexts.some(t => text === t || text.includes(t)) && !text.includes('lanskap') && !text.includes('potret');
+      }
+      if (wanted === 'lanskap' || wanted === '16:9') {
+        return targetTexts.some(t => text === t || text.includes(t)) && !text.includes('potret') && !text.includes('9:16');
+      }
+      return false;
+    });
+
+    if (matched.length > 0) {
+      return matched[matched.length - 1];
+    }
+    return null;
   }
 
   function isVisible(element) {
     const rect = element.getBoundingClientRect();
-    return element.offsetParent !== null && rect.width > 0 && rect.height > 0;
+    if (rect.width <= 0 || rect.height <= 0) return false;
+    const style = typeof window !== 'undefined' ? window.getComputedStyle?.(element) : null;
+    return !style || style.display !== 'none' && style.visibility !== 'hidden';
   }
 
   function getElementCenter(element) {
@@ -687,18 +1027,6 @@
       ...getElementCenter(button)
     });
     if (!response?.success) throw new Error(response?.error || 'Trusted click gagal.');
-  }
-
-  async function trustedKeyPress(element, taskId, stage) {
-    if (!isVisible(element)) throw new Error('Target trusted key tidak terlihat.');
-    element.focus();
-    const response = await chrome.runtime.sendMessage({
-      type: 'TRUSTED_KEY',
-      taskId,
-      stage,
-      key: 'Enter'
-    });
-    if (!response?.success) throw new Error(response?.error || 'Trusted key gagal.');
   }
 
   function awaitVideoResult(existingUrls) {

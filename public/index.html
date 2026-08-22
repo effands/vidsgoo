@@ -55,6 +55,10 @@
       --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
       
       --focus-ring: 0 0 0 3px rgba(56, 189, 248, 0.35);
+      --page-nebula: radial-gradient(circle at 8% 22%, rgba(14, 165, 233, 0.30) 0, transparent 34%), radial-gradient(circle at 92% 72%, rgba(139, 92, 246, 0.30) 0, transparent 38%);
+      --header-nebula: radial-gradient(circle at 12% 15%, rgba(56, 189, 248, 0.2) 0, transparent 34%), radial-gradient(circle at 82% 0%, rgba(139, 92, 246, 0.18) 0, transparent 30%), linear-gradient(115deg, #111827 0%, #171a33 52%, #0d2935 100%);
+      --menu-nebula: linear-gradient(100deg, rgba(14, 165, 233, 0.09), rgba(139, 92, 246, 0.08) 52%, rgba(45, 212, 191, 0.07));
+      --active-tab-nebula: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(139, 92, 246, 0.2));
     }
 
     :root[data-theme="light"] {
@@ -75,7 +79,7 @@
       --accent-hover: #0369a1;
       --accent-active: #075985;
       --accent-tint: rgba(2, 132, 199, 0.1);
-      --accent-text: #0284c7;
+      --accent-text: #075985;
       
       --status-success-bg: rgba(16, 185, 129, 0.12);
       --status-success-border: rgba(16, 185, 129, 0.35);
@@ -100,6 +104,10 @@
       --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12);
       
       --focus-ring: 0 0 0 3px rgba(2, 132, 199, 0.25);
+      --page-nebula: radial-gradient(circle at 8% 22%, rgba(14, 165, 233, 0.10) 0, transparent 34%), radial-gradient(circle at 92% 72%, rgba(139, 92, 246, 0.10) 0, transparent 38%);
+      --header-nebula: radial-gradient(circle at 10% 10%, rgba(56, 189, 248, 0.32) 0, transparent 34%), radial-gradient(circle at 82% 0%, rgba(167, 139, 250, 0.28) 0, transparent 32%), linear-gradient(115deg, #ffffff 0%, #f3f0ff 52%, #e8f8ff 100%);
+      --menu-nebula: linear-gradient(100deg, rgba(224, 242, 254, 0.92), rgba(243, 232, 255, 0.82) 52%, rgba(204, 251, 241, 0.72));
+      --active-tab-nebula: linear-gradient(135deg, rgba(186, 230, 253, 0.9), rgba(221, 214, 254, 0.9));
     }
 
     *, *::before, *::after {
@@ -110,6 +118,9 @@
 
     body {
       background-color: var(--bg-base);
+      background-image: var(--page-nebula);
+      background-attachment: fixed;
+      background-repeat: no-repeat;
       color: var(--text-primary);
       font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
       font-size: 0.9375rem;
@@ -131,7 +142,9 @@
       justify-content: space-between;
       align-items: center;
       padding: 14px 20px;
-      background: var(--bg-surface);
+      /* Nebula is limited to the header to give the studio a recognizable focal surface. */
+      background-color: var(--bg-surface);
+      background-image: var(--header-nebula);
       border: 1px solid var(--border-subtle);
       border-radius: 12px;
       box-shadow: var(--shadow-sm);
@@ -226,7 +239,9 @@
       align-items: center;
       gap: 6px;
       padding: 6px;
-      background: var(--bg-surface);
+      /* The navigation repeats the header spectrum so both controls read as one workspace shell. */
+      background-color: var(--bg-surface);
+      background-image: var(--menu-nebula);
       border: 1px solid var(--border-subtle);
       border-radius: 10px;
       box-shadow: var(--shadow-sm);
@@ -264,8 +279,9 @@
     }
 
     .nav-tab-btn.active {
-      background: var(--bg-inset);
-      border-color: var(--border-strong);
+      background-color: var(--bg-inset);
+      background-image: var(--active-tab-nebula);
+      border-color: var(--border-focus);
       color: var(--accent-text);
       box-shadow: var(--shadow-sm);
     }
@@ -342,6 +358,22 @@
       padding: 20px;
     }
 
+    .upload-card-header {
+      flex-wrap: nowrap;
+      gap: 10px;
+    }
+
+    .upload-card-header h2 {
+      min-width: 0;
+      white-space: nowrap;
+      font-size: 0.95rem;
+    }
+
+    .upload-card-header .badge {
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+
     .composer-grid {
       display: grid;
       grid-template-columns: minmax(0, 1fr) 320px;
@@ -403,6 +435,7 @@
     }
 
     .slot-dropzone {
+      aspect-ratio: 16 / 9;
       border: 2px dashed var(--border-strong);
       border-radius: 8px;
       padding: 14px;
@@ -413,6 +446,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       gap: 4px;
     }
 
@@ -438,11 +472,12 @@
 
     .slot-preview-box {
       position: relative;
+      aspect-ratio: 16 / 9;
       border-radius: 8px;
       overflow: hidden;
       border: 1px solid var(--border-subtle);
       background: #000;
-      height: 110px;
+      height: auto;
     }
 
     .slot-preview-img {
@@ -563,7 +598,7 @@
       margin-bottom: 6px;
     }
 
-    input[type="text"], select, textarea {
+    input[type="text"], input[type="password"], input[type="number"], select, textarea {
       width: 100%;
       padding: 10px 12px;
       background: var(--bg-inset);
@@ -576,10 +611,173 @@
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
-    input[type="text"]:focus, select:focus, textarea:focus {
+    input[type="text"]:focus, input[type="password"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
       outline: none;
       border-color: var(--border-focus);
       box-shadow: var(--focus-ring);
+    }
+
+    .ai-generator-settings {
+      margin-bottom: 14px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      background: var(--bg-inset);
+    }
+
+    .ai-generator-settings summary {
+      padding: 12px 14px;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .ai-generator-settings[open] summary {
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .ai-settings-body {
+      padding: 14px;
+    }
+
+    .ai-settings-grid {
+      display: grid;
+      grid-template-columns: minmax(150px, 0.7fr) minmax(220px, 1.3fr);
+      gap: 12px;
+    }
+
+    .api-key-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .ai-settings-note, .ai-generator-status {
+      margin: 8px 0 0;
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      line-height: 1.5;
+    }
+
+    .ai-generator-status[data-state="error"] { color: var(--status-danger-text); }
+    .ai-generator-status[data-state="success"] { color: var(--status-success-text); }
+
+    .ai-key-workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      gap: 16px;
+    }
+
+    .ai-provider-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: thin;
+    }
+
+    .ai-provider-tab {
+      flex: 0 0 auto;
+      padding: 9px 14px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      background: var(--bg-inset);
+      color: var(--text-secondary);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .ai-provider-tab[aria-pressed="true"] {
+      border-color: var(--border-focus);
+      background: var(--accent-tint);
+      color: var(--accent-text);
+      box-shadow: var(--focus-ring);
+    }
+
+    .ai-provider-toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(240px, 0.8fr);
+      gap: 12px;
+      align-items: end;
+      margin: 16px 0 12px;
+    }
+
+    .ai-provider-heading {
+      font-size: 1rem;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .ai-credential-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .ai-credential-card {
+      display: grid;
+      grid-template-columns: 74px minmax(180px, 1fr) auto auto auto auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      background: var(--bg-inset);
+    }
+
+    .ai-credential-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .ai-key-status {
+      white-space: nowrap;
+    }
+
+    .ai-key-status[data-status="valid"] { color: var(--status-success-text); }
+    .ai-key-status[data-status="failed"] { color: var(--status-danger-text); }
+    .ai-key-status[data-status="active"] { color: var(--accent-text); }
+
+    .ai-key-add {
+      margin-top: 10px;
+    }
+
+    .ai-fallback-panel {
+      padding: 14px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      background: var(--bg-inset);
+      align-self: start;
+    }
+
+    .ai-fallback-panel h3 {
+      font-size: 0.875rem;
+      margin-bottom: 6px;
+    }
+
+    .ai-fallback-flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .ai-fallback-chip {
+      padding: 5px 8px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 999px;
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .ai-fallback-chip.is-first {
+      border-color: var(--border-focus);
+      color: var(--accent-text);
     }
 
     .batch-options-grid {
@@ -638,6 +836,27 @@
       color: var(--text-primary);
       font-size: 0.8125rem;
       margin-bottom: 6px;
+    }
+
+    .affiliate-primary-fields {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(260px, 1fr) 140px;
+      gap: 14px;
+      margin-bottom: 14px;
+      align-items: end;
+    }
+
+    .affiliate-secondary-fields {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(260px, 1fr);
+      gap: 14px;
+      margin-bottom: 16px;
+      align-items: end;
+    }
+
+    .affiliate-primary-fields .form-group,
+    .affiliate-secondary-fields .form-group {
+      margin-bottom: 0;
     }
 
     kbd {
@@ -1002,11 +1221,13 @@
 
     .gallery-card video {
       width: 100%;
-      height: 180px;
+      aspect-ratio: 16 / 9;
       object-fit: contain;
-      background: #000000;
+      object-position: center;
+      background: #05070a;
       border-radius: 6px;
       border: 1px solid var(--border-subtle);
+      display: block;
     }
 
     .gallery-meta {
@@ -1017,6 +1238,47 @@
       color: var(--text-secondary);
       gap: 6px;
       padding-top: 2px;
+      min-width: 0;
+      white-space: nowrap;
+    }
+
+    .gallery-folder-name {
+      display: block;
+      min-width: 0;
+      max-width: 68%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .gallery-source-meta {
+      flex: none;
+      white-space: nowrap;
+    }
+
+    .gallery-header-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: none;
+    }
+
+    .gallery-select-checkbox {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      accent-color: var(--accent-primary);
+      cursor: pointer;
+    }
+
+    .gallery-card .delete-video-btn {
+      min-width: 32px;
+      min-height: 32px;
+      padding: 4px;
+      color: var(--status-danger-text);
+      background: var(--status-danger-bg);
+      border: 1px solid var(--status-danger-border);
+      font-size: 1rem;
     }
 
     .log-stream-box {
@@ -1230,6 +1492,26 @@
       .batch-options-grid {
         grid-template-columns: 1fr 1fr;
       }
+      .affiliate-primary-fields,
+      .affiliate-secondary-fields {
+        grid-template-columns: 1fr;
+      }
+      .ai-key-workspace {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .ai-settings-grid, .api-key-row {
+        grid-template-columns: 1fr;
+      }
+      .ai-provider-toolbar,
+      .ai-credential-card {
+        grid-template-columns: 1fr;
+      }
+      .ai-credential-card .btn {
+        width: 100%;
+      }
     }
 
     @media (max-width: 640px) {
@@ -1324,6 +1606,9 @@
       <span>🎬 Galeri Video</span>
       <span id="navGalleryBadge" class="tab-counter">0</span>
     </button>
+    <button class="nav-tab-btn" role="tab" aria-selected="false" aria-controls="pane-api-keys" id="tab-api-keys" data-tab="api-keys">
+      <span>🔑 API Key</span>
+    </button>
     <button class="nav-tab-btn" role="tab" aria-selected="false" aria-controls="pane-logs" id="tab-logs" data-tab="logs">
       <span>⚡ Live Logs</span>
     </button>
@@ -1403,7 +1688,7 @@
       <!-- Quick Fleet Summary Widget -->
       <div>
         <div class="studio-card">
-          <div class="card-header">
+          <div class="card-header upload-card-header">
             <h2>Eksekutor Standby</h2>
           </div>
           <div class="card-body">
@@ -1436,7 +1721,7 @@
         <div class="studio-card">
           <div class="card-header">
             <h2>
-              <span>Upload Gambar (Maksimal 3)</span>
+              <span>Upload Gambar</span>
             </h2>
             <span class="badge badge-info" id="affSlotCountBadge">0 / 3 Gambar</span>
           </div>
@@ -1511,12 +1796,12 @@
           </div>
           <div class="card-body">
             <!-- Product Parameters Form -->
-            <div style="display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px; margin-bottom: 14px;">
-              <div class="form-group" style="margin-bottom: 0;">
+            <div class="affiliate-primary-fields">
+              <div class="form-group">
                 <label for="affProductName">Nama Produk Affiliate &amp; Varian</label>
                 <input type="text" id="affProductName" placeholder="Contoh: Marshall Major V Headphone warna Cream" oninput="syncAffFolder()">
               </div>
-              <div class="form-group" style="margin-bottom: 0;">
+              <div class="form-group">
                 <label for="affStyle">Gaya Promosi / Formula Hook</label>
                 <select id="affStyle">
                   <option value="hook_ugc_2s">Hook 2 Detik Pertama (Formula UGC Viral)</option>
@@ -1526,31 +1811,27 @@
                   <option value="aesthetic">Aesthetic Clean Showcase</option>
                 </select>
               </div>
+              <div class="form-group">
+                <label for="affVariationCount">Jumlah Video</label>
+                <input type="number" id="affVariationCount" value="1" min="1" max="20" step="1" inputmode="numeric">
+              </div>
             </div>
 
-            <div class="form-group">
-              <label for="affProductUsp">Poin Keunggulan / USP / Detail Fitur</label>
-              <input type="text" id="affProductUsp" placeholder="Contoh: Baterai awet 100 jam, suara bass jernih menggelegar, desain lipat compact">
-            </div>
-
-            <div style="display: grid; grid-template-columns: minmax(0, 1.4fr) 140px; gap: 14px; margin-bottom: 16px;">
-              <div class="form-group" style="margin-bottom: 0;">
+            <div class="affiliate-secondary-fields">
+              <div class="form-group">
+                <label for="affProductUsp">Poin Keunggulan / USP / Detail Fitur</label>
+                <input type="text" id="affProductUsp" placeholder="Contoh: Baterai awet 100 jam, suara bass jernih menggelegar, desain lipat compact">
+              </div>
+              <div class="form-group">
                 <label for="affCta">Call To Action (CTA)</label>
                 <input type="text" id="affCta" value="klik keranjang sekarang">
-              </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <label for="affVariationCount">Jumlah Variasi</label>
-                <select id="affVariationCount">
-                  <option value="1">1 Video</option>
-                  <option value="3" selected>3 Variasi Video</option>
-                  <option value="5">5 Variasi Video</option>
-                </select>
               </div>
             </div>
 
             <button type="button" id="generateAffScriptBtn" class="btn btn-secondary btn-full" style="margin-bottom: 16px;">
-              ✨ Susun Prompt Affiliate Otomatis (@Gambar1, @Gambar2 &amp; @Gambar3)
+              Susun Prompt Affiliate dengan AI
             </button>
+            <p id="affAiGeneratorStatus" class="ai-generator-status" role="status" aria-live="polite"></p>
 
             <!-- Tag Insert Shortcuts -->
             <div class="tag-inserters-row">
@@ -1574,6 +1855,9 @@
                     </div>
                     <div style="margin-top: 10px;">
                       <kbd>Enter</kbd> + <kbd>Enter</kbd>
+                    </div>
+                    <div style="margin-top: 10px;">
+                      Support spintax: <kbd>{review jujur|demo produk|cerita pengalaman}</kbd>. Setiap video memakai variasi berbeda.
                     </div>
                   </aside>
                 </div>
@@ -1679,6 +1963,9 @@
           <button id="refreshGalleryBtn" class="btn btn-sm btn-secondary" type="button">
             Refresh
           </button>
+          <button id="deleteSelectedGalleryBtn" class="btn btn-sm btn-danger-outline" type="button" disabled>
+            ☑ Hapus Terpilih (0)
+          </button>
           <button id="clearGalleryBtn" class="btn btn-sm btn-danger-outline" type="button">
             Hapus Semua Video
           </button>
@@ -1702,6 +1989,46 @@
     </div>
   </section>
 
+  <section id="pane-api-keys" class="tab-pane" role="tabpanel" aria-labelledby="tab-api-keys">
+    <div class="studio-card">
+      <div class="card-header">
+        <h2>API Key Generator Prompt</h2>
+        <span class="badge badge-info">Tersimpan Lokal</span>
+      </div>
+      <div class="card-body">
+        <div id="aiProviderTabs" class="ai-provider-tabs" aria-label="Pilih provider API">
+          <button type="button" class="ai-provider-tab" data-provider="gemini" aria-pressed="true">Gemini</button>
+          <button type="button" class="ai-provider-tab" data-provider="deepseek" aria-pressed="false">DeepSeek</button>
+          <button type="button" class="ai-provider-tab" data-provider="groq" aria-pressed="false">Groq</button>
+          <button type="button" class="ai-provider-tab" data-provider="openai" aria-pressed="false">OpenAI</button>
+        </div>
+        <div class="ai-key-workspace">
+          <div>
+            <div class="ai-provider-toolbar">
+              <div>
+                <h3 id="aiActiveProviderLabel" class="ai-provider-heading">Gemini API Keys</h3>
+                <p class="ai-settings-note">Key dicoba sesuai urutan dan hanya disimpan pada browser ini.</p>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="affAiModel">Model</label>
+                <select id="affAiModel"></select>
+              </div>
+            </div>
+            <div id="aiCredentialList" class="ai-credential-list"></div>
+            <button type="button" id="addAiCredential" class="btn btn-secondary ai-key-add">+ Tambah API Key</button>
+            <p id="affAiSettingsStatus" class="ai-generator-status" role="status" aria-live="polite"></p>
+          </div>
+          <aside id="aiFallbackOrder" class="ai-fallback-panel">
+            <h3>Urutan Fallback</h3>
+            <p class="ai-settings-note">Provider terpilih dicoba lebih dahulu, lalu berpindah otomatis jika seluruh key gagal.</p>
+            <div class="ai-fallback-flow"></div>
+          </aside>
+        </div>
+        <p class="ai-settings-note">API key tidak dimasukkan ke antrean video atau log server.</p>
+      </div>
+    </div>
+  </section>
+
   <!-- TAB 5: Live Observability Logs -->
   <section id="pane-logs" class="tab-pane" role="tabpanel" aria-labelledby="tab-logs">
     <div class="studio-card">
@@ -1709,7 +2036,10 @@
         <h2>
           <span>Aktivitas Otomatisasi (Live Stream)</span>
         </h2>
-        <span class="badge badge-online">Live Feed</span>
+        <div class="action-group">
+          <button id="copyLogsBtn" class="btn btn-sm btn-secondary" type="button" disabled aria-live="polite">Salin Log</button>
+          <span class="badge badge-online">Live Feed</span>
+        </div>
       </div>
       <div class="card-body" style="padding: 12px;">
         <div id="logBox" class="log-stream-box">
@@ -1768,6 +2098,7 @@
 <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
 <!-- Application Logic -->
+<script src="/ai-settings.js"></script>
 <script>
   // Tab Switching Logic
   const getTabButtons = () => typeof document.querySelectorAll === 'function' ? Array.from(document.querySelectorAll('.nav-tab-btn')) : [];
@@ -1798,7 +2129,7 @@
 
   // Restore active tab from URL hash if available
   const initialHash = typeof window !== 'undefined' && window.location?.hash ? window.location.hash.replace('#', '') : '';
-  if (initialHash && ['composer', 'affiliate', 'queue', 'gallery', 'logs', 'fleet'].includes(initialHash)) {
+  if (initialHash && ['composer', 'affiliate', 'queue', 'gallery', 'api-keys', 'logs', 'fleet'].includes(initialHash)) {
     switchTab(initialHash);
   }
 
@@ -1977,63 +2308,286 @@
 
   // Smart Copywriting Generator for Affiliate Prompts
   const generateAffScriptBtn = document.getElementById('generateAffScriptBtn');
+  const aiProviderModels = {
+    gemini: ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-3.7-flash'],
+    deepseek: ['deepseek-v4-flash', 'deepseek-v4-pro'],
+    groq: ['openai/gpt-oss-20b', 'openai/gpt-oss-120b', 'groq/compound-mini'],
+    openai: ['gpt-5-mini', 'gpt-5', 'gpt-5.4']
+  };
+  const aiSettingsApi = window.VidsGooAiSettings;
+  const aiModelInput = document.getElementById('affAiModel');
+  const aiProviderTabs = document.getElementById('aiProviderTabs');
+  const aiCredentialList = document.getElementById('aiCredentialList');
+  const aiActiveProviderLabel = document.getElementById('aiActiveProviderLabel');
+  const aiFallbackPanel = document.getElementById('aiFallbackOrder');
+  const aiFallbackOrder = aiFallbackPanel?.querySelector?.('.ai-fallback-flow') || null;
+  const aiGeneratorStatus = document.getElementById('affAiGeneratorStatus');
+  const aiSettingsStatus = document.getElementById('affAiSettingsStatus');
+  let activeAiProvider = aiSettingsApi?.loadAiSettings(localStorage)?.provider || 'gemini';
+  let aiCredentialSequence = 0;
+
+  function setAiGeneratorStatus(message, state = '') {
+    if (!aiGeneratorStatus) return;
+    aiGeneratorStatus.textContent = message;
+    aiGeneratorStatus.dataset.state = state;
+  }
+
+  function setAiSettingsStatus(message, state = '') {
+    if (!aiSettingsStatus) return;
+    aiSettingsStatus.textContent = message;
+    aiSettingsStatus.dataset.state = state;
+  }
+
+  function readAiCredentialCards() {
+    return [...(aiCredentialList?.querySelectorAll('.ai-credential-card') || [])].map(card => ({
+      id: card.dataset.credentialId,
+      apiKey: card.querySelector('.ai-credential-key')?.value || '',
+      status: card.dataset.storedStatus || 'untested'
+    }));
+  }
+
+  function persistActiveAiProvider() {
+    if (!aiSettingsApi || !activeAiProvider) return null;
+    return aiSettingsApi.saveProviderSettings(
+      localStorage,
+      activeAiProvider,
+      readAiCredentialCards(),
+      aiModelInput?.value || aiProviderModels[activeAiProvider]?.[0] || ''
+    );
+  }
+
+  function renderAiFallbackOrder(settings) {
+    if (!aiFallbackOrder) return;
+    const order = [activeAiProvider, ...aiSettingsApi.PROVIDER_ORDER.filter(provider => provider !== activeAiProvider)];
+    const nodes = [];
+    order.forEach((provider, index) => {
+      if (index) {
+        const arrow = document.createElement('span');
+        arrow.textContent = '→';
+        arrow.setAttribute('aria-hidden', 'true');
+        nodes.push(arrow);
+      }
+      const chip = document.createElement('span');
+      chip.className = `ai-fallback-chip${index === 0 ? ' is-first' : ''}`;
+      const count = settings.providers[provider]?.credentials?.length || 0;
+      chip.textContent = `${aiSettingsApi.PROVIDER_LABELS[provider]} (${count})`;
+      nodes.push(chip);
+    });
+    aiFallbackOrder.replaceChildren(...nodes);
+  }
+
+  function createAiCredentialCard(credential, index, activeCredentialId) {
+    const card = document.createElement('div');
+    card.className = 'ai-credential-card';
+    card.dataset.credentialId = credential.id;
+    card.dataset.storedStatus = credential.status || 'untested';
+
+    const name = document.createElement('span');
+    name.className = 'ai-credential-name';
+    name.textContent = `Key ${index + 1}`;
+
+    const input = document.createElement('input');
+    input.className = 'ai-credential-key';
+    input.type = 'password';
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    input.placeholder = `Masukkan API key ${aiSettingsApi.PROVIDER_LABELS[activeAiProvider]}`;
+    input.value = credential.apiKey || '';
+
+    const isActive = credential.id === activeCredentialId && credential.status === 'valid';
+    const status = document.createElement('span');
+    status.className = 'badge ai-key-status';
+    status.dataset.status = isActive ? 'active' : credential.status || 'untested';
+    status.textContent = isActive ? 'Aktif' : credential.status === 'valid' ? 'Valid' : credential.status === 'failed' ? 'Gagal' : 'Belum dites';
+
+    const show = document.createElement('button');
+    show.type = 'button';
+    show.className = 'btn btn-secondary ai-credential-show';
+    show.textContent = 'Tampilkan';
+
+    const test = document.createElement('button');
+    test.type = 'button';
+    test.className = 'btn btn-secondary ai-credential-test';
+    test.textContent = 'Test';
+
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'btn btn-danger ai-credential-remove';
+    remove.textContent = 'Hapus';
+    remove.setAttribute('aria-label', `Hapus Key ${index + 1}`);
+
+    card.append(name, input, status, show, test, remove);
+    return card;
+  }
+
+  function renderAiProvider(provider) {
+    const settings = aiSettingsApi.loadAiSettings(localStorage);
+    activeAiProvider = provider;
+    const providerSettings = settings.providers[provider];
+    aiProviderTabs?.querySelectorAll('[data-provider]').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.provider === provider));
+    });
+    if (aiActiveProviderLabel) aiActiveProviderLabel.textContent = `${aiSettingsApi.PROVIDER_LABELS[provider]} API Keys`;
+    if (aiModelInput) {
+      const models = [...(aiProviderModels[provider] || [])];
+      if (providerSettings?.model && !models.includes(providerSettings.model)) models.push(providerSettings.model);
+      aiModelInput.replaceChildren(...models.map(model => {
+        const option = document.createElement('option');
+        option.value = model;
+        option.textContent = model;
+        return option;
+      }));
+      aiModelInput.value = providerSettings?.model || models[0] || '';
+    }
+    if (aiCredentialList) {
+      const credentials = providerSettings?.credentials || [];
+      const content = credentials.length
+        ? credentials.map((credential, index) => createAiCredentialCard(credential, index, providerSettings.activeCredentialId))
+        : (() => {
+            const empty = document.createElement('p');
+            empty.className = 'ai-settings-note ai-credential-empty';
+            empty.textContent = 'Belum ada API key untuk provider ini.';
+            return [empty];
+          })();
+      aiCredentialList.replaceChildren(...content);
+    }
+    renderAiFallbackOrder(settings);
+  }
+
+  if (aiSettingsApi && aiProviderTabs) {
+    const savedAiSettings = aiSettingsApi.loadAiSettings(localStorage);
+    renderAiProvider(savedAiSettings.provider);
+    aiProviderTabs.addEventListener('click', event => {
+      const button = event.target.closest('[data-provider]');
+      if (!button || button.dataset.provider === activeAiProvider) return;
+      persistActiveAiProvider();
+      renderAiProvider(button.dataset.provider);
+      persistActiveAiProvider();
+      setAiGeneratorStatus('');
+      setAiSettingsStatus('');
+    });
+  }
+
+  aiModelInput?.addEventListener('change', () => {
+    const settings = persistActiveAiProvider();
+    if (settings) renderAiFallbackOrder(settings);
+    setAiSettingsStatus(`Model ${aiModelInput.value} tersimpan.`, 'success');
+  });
+
+  document.getElementById('addAiCredential')?.addEventListener('click', () => {
+    const settings = aiSettingsApi.loadAiSettings(localStorage);
+    const credentials = readAiCredentialCards();
+    const id = `${activeAiProvider}-key-${Date.now()}-${++aiCredentialSequence}`;
+    const card = createAiCredentialCard({ id, apiKey: '', status: 'untested' }, credentials.length, settings.providers[activeAiProvider].activeCredentialId);
+    aiCredentialList?.querySelector('.ai-credential-empty')?.remove();
+    aiCredentialList?.append(card);
+    card.querySelector('input')?.focus();
+    setAiSettingsStatus('Isi API key baru. Perubahan disimpan otomatis.', '');
+  });
+
+  aiCredentialList?.addEventListener('change', event => {
+    if (!event.target.matches('.ai-credential-key')) return;
+    const card = event.target.closest('.ai-credential-card');
+    card.dataset.storedStatus = 'untested';
+    const settings = persistActiveAiProvider();
+    renderAiProvider(activeAiProvider);
+    renderAiFallbackOrder(settings);
+    setAiSettingsStatus('API key tersimpan lokal.', 'success');
+  });
+
+  aiCredentialList?.addEventListener('click', async event => {
+    const card = event.target.closest('.ai-credential-card');
+    if (!card) return;
+    if (event.target.closest('.ai-credential-show')) {
+      const input = card.querySelector('.ai-credential-key');
+      const reveal = input.type === 'password';
+      input.type = reveal ? 'text' : 'password';
+      event.target.closest('button').textContent = reveal ? 'Sembunyikan' : 'Tampilkan';
+      return;
+    }
+    if (event.target.closest('.ai-credential-remove')) {
+      card.remove();
+      persistActiveAiProvider();
+      renderAiProvider(activeAiProvider);
+      setAiSettingsStatus('API key dihapus dari browser lokal.', 'success');
+      return;
+    }
+    const testButton = event.target.closest('.ai-credential-test');
+    if (!testButton) return;
+    const apiKey = card.querySelector('.ai-credential-key')?.value.trim() || '';
+    if (!apiKey) return setAiSettingsStatus('API key wajib diisi sebelum dites.', 'error');
+    card.dataset.storedStatus = 'untested';
+    persistActiveAiProvider();
+    testButton.disabled = true;
+    testButton.textContent = 'Menguji...';
+    setAiSettingsStatus(`Menguji ${aiSettingsApi.PROVIDER_LABELS[activeAiProvider]}...`, '');
+    let valid = false;
+    try {
+      const response = await fetch('/api/ai/test-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider: activeAiProvider, apiKey, model: aiModelInput?.value || '' })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Test API key gagal.');
+      valid = true;
+      setAiSettingsStatus(`API key valid. Model ${result.model} dapat diakses.`, 'success');
+    } catch (error) {
+      setAiSettingsStatus(error.message || 'Test API key gagal.', 'error');
+    } finally {
+      aiSettingsApi.markCredentialResult(localStorage, activeAiProvider, card.dataset.credentialId, valid);
+      renderAiProvider(activeAiProvider);
+    }
+  });
+
   if (generateAffScriptBtn) {
-    generateAffScriptBtn.addEventListener('click', () => {
-      const prodName = document.getElementById('affProductName')?.value?.trim() || 'Marshall Major V Headphone warna Cream';
-      const usp = document.getElementById('affProductUsp')?.value?.trim() || 'suara bass jernih menggelegar dan baterai awet 100 jam';
+    generateAffScriptBtn.addEventListener('click', async () => {
+      const productName = document.getElementById('affProductName')?.value?.trim() || '';
+      const usp = document.getElementById('affProductUsp')?.value?.trim() || '';
       const cta = document.getElementById('affCta')?.value?.trim() || 'klik keranjang sekarang';
       const style = document.getElementById('affStyle')?.value || 'hook_ugc_2s';
-      const count = parseInt(document.getElementById('affVariationCount')?.value || '3', 10);
+      const requestedCount = parseInt(document.getElementById('affVariationCount')?.value || '1', 10);
+      const count = Math.min(20, Math.max(1, Number.isInteger(requestedCount) ? requestedCount : 1));
+      document.getElementById('affVariationCount').value = String(count);
+      persistActiveAiProvider();
+      const aiSettings = aiSettingsApi.loadAiSettings(localStorage);
+      const candidates = aiSettingsApi.buildFallbackCandidates(aiSettings, activeAiProvider);
+      if (!candidates.length) {
+        setAiGeneratorStatus('Tambahkan minimal satu API key pada menu API Key.', 'error');
+        setAiSettingsStatus('Belum ada API key yang tersimpan.', 'error');
+        switchTab('api-keys');
+        return;
+      }
 
-      // Check if 3rd slot (detail) is active
-      const hasSlot3 = !!slotData[2];
-      const productRef = hasSlot3 ? 'untuk @Gambar2 produk @Gambar3' : 'untuk produk @Gambar2';
-
-      const templates = {
-        hook_ugc_2s: [
-          `@Gambar1 buatkan video UGC affiliate dengan 2 detik pertama HOOK ${productRef} promosikan dalam bahasa indonesia, produk tentang ${prodName}, keunggulan ${usp}, akhiri CTA untuk ${cta}.`,
-          `@Gambar1 memegang dan mereview ${productRef} dengan antusias di awal video. Menunjukkan detail fisik ${prodName} dan menjelaskan ${usp} dalam bahasa santai kekinian, diakhiri ajakan tegas untuk ${cta}.`,
-          `Video UGC vertikal diawali @Gambar1 yang kagum melihat keindahan ${productRef}. Memperlihatkan kepraktisan ${prodName} (${usp}) lalu menatap ramah ke kamera mengajak penonton ${cta}.`,
-          `@Gambar1 mendemonstrasikan pengalaman memakai ${productRef} dengan penuh percaya diri. Menjelaskan alasan kenapa wajib beli ${prodName} karena ${usp}, akhiri dengan ajakan ${cta}.`,
-          `@Gambar1 unboxing ${productRef} dengan transisi cepat dan dinamis. Menyorot tekstur premium ${prodName} dan kelebihan ${usp}, ditutup ajakan segera ${cta}.`
-        ],
-        honest_review: [
-          `@Gambar1 memberikan review jujur ${productRef} setelah pemakaian intensif, membahas secara detail ${prodName} dengan fitur ${usp}. Nada bicara terpercaya dan bersahabat, akhiri CTA untuk ${cta}.`,
-          `@Gambar1 duduk santai di depan kamera menunjukkan ${productRef}, menceritakan kepuasan menggunakan ${prodName} berkat ${usp}. Diakhiri rekomendasi hangat untuk ${cta}.`,
-          `@Gambar1 membedah kelebihan ${productRef} secara objektif, menonjolkan fitur unggulan ${prodName} (${usp}). Visual jernih dan meyakinkan penonton untuk ${cta}.`,
-          `@Gambar1 membagikan tips pemakaian terbaik untuk ${productRef}, memperlihatkan efektivitas ${prodName} dengan ${usp}, ditutup ajakan tulus untuk ${cta}.`,
-          `@Gambar1 membandingkan ${productRef} dengan produk sejenis, membuktikan keunggulan ${prodName} yang ${usp}. Diakhiri ajakan checkout ${cta}.`
-        ],
-        flash_sale: [
-          `@Gambar1 mengumumkan diskon heboh ${productRef} dengan nada mendesak penuh energi. Menjelaskan ${prodName} punya ${usp} dan stok terbatas, akhiri CTA untuk ${cta}.`,
-          `@Gambar1 memegang ${productRef} sambil mengingatkan penonton agar tidak ketinggalan harga spesial ${prodName} (${usp}). Seruan cepat dan tegas untuk ${cta}.`,
-          `@Gambar1 memberikan peringatan promo kilat untuk ${productRef}, menonjolkan nilai terbaik dari ${prodName} berkat ${usp}. Langsung ajak penonton ${cta}.`,
-          `@Gambar1 menunjukkan bukti produk ${productRef} yang laris manis karena ${usp}, menyuruh audiens segera ambil promo ${prodName} sebelum habis. Diakhiri ${cta}.`,
-          `@Gambar1 memperlihatkan kepuasan memiliki ${productRef} dengan harga promo hari ini, keunggulan ${usp}. Ditutup seruan checkout cepat untuk ${cta}.`
-        ],
-        problem_solution: [
-          `@Gambar1 mengawali dengan masalah yang sering dialami audiens, lalu memperkenalkan ${productRef} sebagai solusi praktis lewat ${prodName} yang ${usp}. Diakhiri pesan ${cta}.`,
-          `@Gambar1 menceritakan rasa kesal dengan produk lama, lalu menunjukkan bagaimana ${productRef} mengatasi segalanya dengan ${usp}. Ajakan meyakinkan untuk ${cta}.`,
-          `@Gambar1 membagikan solusi cerdas menggunakan ${productRef}, memperlihatkan transformasi kemudahan dari ${prodName} (${usp}). Akhiri CTA untuk ${cta}.`,
-          `@Gambar1 membahas keluhan umum lalu menunjukkan kenapa ${productRef} adalah jawaban terbaik berkat ${usp}. Diakhiri ajakan ${cta}.`,
-          `@Gambar1 memperlihatkan hasil nyata setelah menggunakan ${productRef} pada ${prodName} (${usp}). Nada solutif inspiratif, ditutup ${cta}.`
-        ],
-        aesthetic: [
-          `Visual sinematik elegan menampilkan @Gambar1 dan keindahan ${productRef} dalam nuansa warm aesthetic, menonjolkan detail ${prodName} (${usp}). Musik lembut, diakhiri teks ajakan ${cta}.`,
-          `@Gambar1 memperagakan penggunaan ${productRef} dengan gerakan kamera slow-motion halus, menyorot detail ${prodName} dan ${usp}. Nuansa mewah berkelas, ditutup ${cta}.`,
-          `Kamera macro bergeser menampilkan keindahan tekstur ${productRef} bersama @Gambar1, memperlihatkan nilai estetik ${prodName} (${usp}). Diakhiri pesan halus ${cta}.`,
-          `Showcase produk bersih modern mempertemukan ekspresi anggun @Gambar1 dan tampilan elegan ${productRef}. Menampilkan ${usp}, ditutup ajakan ${cta}.`,
-          `Potret sinematik 9:16 yang memadukan aktivitas harian estetik @Gambar1 ditemani ${productRef}. Menampilkan kenyamanan ${prodName} (${usp}), diakhiri ${cta}.`
-        ]
-      };
-
-      const selectedList = templates[style] || templates.hook_ugc_2s;
-      const prompts = selectedList.slice(0, count).join('\n\n');
-      
-      const promptsTextarea = document.getElementById('affPrompts');
-      if (promptsTextarea) {
-        promptsTextarea.value = prompts;
-        showToast(`${count} Prompt Affiliate berhasil disusun!`, '✨');
+      const previousLabel = generateAffScriptBtn.textContent;
+      generateAffScriptBtn.disabled = true;
+      generateAffScriptBtn.textContent = 'Menyusun prompt...';
+      setAiGeneratorStatus('Menyiapkan fallback API key...', '');
+      try {
+        const basePayload = { productName, usp, cta, style, count, hasDetail: Boolean(slotData[2]) };
+        const result = await aiSettingsApi.generatePromptsWithFallback(basePayload, candidates, async (candidate, payload) => {
+          setAiGeneratorStatus(`Mencoba ${candidate.providerLabel} ${candidate.credentialLabel}...`, '');
+          const response = await fetch('/api/ai/generate-affiliate-prompts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const responseBody = await response.json();
+          if (!response.ok) throw new Error(responseBody.error || 'Generator prompt AI gagal.');
+          return responseBody;
+        }, (candidate, valid) => {
+          aiSettingsApi.markCredentialResult(localStorage, candidate.provider, candidate.credentialId, valid);
+        });
+        const promptsTextarea = document.getElementById('affPrompts');
+        if (promptsTextarea) promptsTextarea.value = result.prompts;
+        setAiGeneratorStatus(`${count} prompt siap menggunakan ${aiSettingsApi.PROVIDER_LABELS[result.provider] || result.provider} ${result.model}.`, 'success');
+        showToast(`${count} prompt Affiliate berhasil disusun.`, '✓');
+      } catch (error) {
+        setAiGeneratorStatus(error.message || 'Generator prompt AI gagal.', 'error');
+      } finally {
+        renderAiProvider(activeAiProvider);
+        generateAffScriptBtn.disabled = false;
+        generateAffScriptBtn.textContent = previousLabel;
       }
     });
   }
@@ -2048,12 +2602,15 @@
       const folder = document.getElementById('affFolder')?.value || 'Affiliate_General';
       const targetChrome = document.getElementById('affTargetChrome')?.value || 'auto';
       const url = document.getElementById('affTargetUrl')?.value || '';
+      const requestedVariationCount = parseInt(document.getElementById('affVariationCount')?.value || '1', 10);
+      const variationCount = Math.min(20, Math.max(1, Number.isInteger(requestedVariationCount) ? requestedVariationCount : 1));
+      document.getElementById('affVariationCount').value = String(variationCount);
       const affiliateConfig = {
         productName: document.getElementById('affProductName')?.value || '',
         productUsp: document.getElementById('affProductUsp')?.value || '',
         cta: document.getElementById('affCta')?.value || '',
         style: document.getElementById('affStyle')?.value || 'hook_ugc_2s',
-        variationCount: document.getElementById('affVariationCount')?.value || '3'
+        variationCount: String(variationCount)
       };
 
       if (!prompts.trim()) {
@@ -2106,9 +2663,11 @@
      Standard General Queue & Fleet Management
      ========================================================================== */
   let currentQueueData = [];
+  let latestRenderedLogs = [];
   let currentGalleryData = [];
   let selectedCategory = 'ALL';
   let lastGallerySignature = null;
+  const selectedGalleryKeys = new Set();
   let deleteTokenPromise = null;
 
   async function fetchChromes() {
@@ -2198,6 +2757,9 @@
   function renderLogs(logs) {
     const logBox = document.getElementById('logBox');
     if (!logBox) return;
+    latestRenderedLogs = Array.isArray(logs) ? logs.map(log => String(log ?? '')) : [];
+    const copyLogsBtn = document.getElementById('copyLogsBtn');
+    if (copyLogsBtn) copyLogsBtn.disabled = latestRenderedLogs.length === 0;
     logBox.textContent = '';
     if (!logs || !logs.length) {
       const empty = document.createElement('div');
@@ -2236,6 +2798,19 @@
     });
     logBox.scrollTop = logBox.scrollHeight;
   }
+
+  const copyLogsBtn = document.getElementById('copyLogsBtn');
+  copyLogsBtn?.addEventListener('click', async () => {
+    if (!latestRenderedLogs.length) return;
+    const originalLabel = 'Salin Log';
+    try {
+      await navigator.clipboard.writeText(latestRenderedLogs.join('\n'));
+      copyLogsBtn.textContent = 'Tersalin';
+    } catch (_) {
+      copyLogsBtn.textContent = 'Gagal Menyalin';
+    }
+    setTimeout(() => { copyLogsBtn.textContent = originalLabel; }, 1600);
+  });
 
   async function getDeleteToken() {
     if (!deleteTokenPromise) {
@@ -2299,7 +2874,7 @@
         if (productUsp) productUsp.value = config.productUsp || '';
         if (cta) cta.value = config.cta || 'klik keranjang sekarang';
         if (style) style.value = config.style || 'hook_ugc_2s';
-        if (variationCount) variationCount.value = config.variationCount || '3';
+        if (variationCount) variationCount.value = config.variationCount || '1';
         slotData.fill(null);
         (Array.isArray(task.images) ? task.images : []).slice(0, 3).forEach((image, index) => {
           const tagIndex = Number.parseInt(String(image.tag || '').match(/@?Gambar([1-3])/i)?.[1] || '', 10) - 1;
@@ -2509,6 +3084,14 @@
     });
   }
 
+  function updateDeleteSelectedButton() {
+    const button = document.getElementById('deleteSelectedGalleryBtn');
+    if (!button) return;
+    const count = selectedGalleryKeys.size;
+    button.textContent = `☑ Hapus Terpilih (${count})`;
+    button.disabled = count === 0;
+  }
+
   function renderGalleryGrid() {
     const galleryGrid = document.getElementById('galleryGrid');
     if (!galleryGrid) return;
@@ -2528,22 +3111,27 @@
 
     galleryGrid.innerHTML = filtered.map(v => {
       const targetPath = (v && (v.relativePath || v.filename)) ? (v.relativePath || v.filename) : '';
+      const videoKey = galleryVideoKey(v);
       return `
         <div class="gallery-card">
           <div class="gallery-header-row">
             <div class="gallery-filename" title="${escapeHtml(v.filename)}">${escapeHtml(v.filename)}</div>
-            <button class="icon-btn-delete delete-video-btn" data-source="${escapeHtml(v.source)}" data-filename="${encodeURIComponent(String(targetPath))}" type="button" title="Hapus video ini" aria-label="Hapus video">
-              🗑
-            </button>
+            <div class="gallery-header-actions">
+              <input class="gallery-select-checkbox" type="checkbox" data-gallery-key="${videoKey}" ${selectedGalleryKeys.has(videoKey) ? 'checked' : ''} aria-label="Pilih ${escapeHtml(v.filename)} untuk dihapus">
+              <button class="icon-btn-delete delete-video-btn" data-source="${escapeHtml(v.source)}" data-filename="${encodeURIComponent(String(targetPath))}" type="button" title="Hapus video ini" aria-label="Hapus video ${escapeHtml(v.filename)}">
+                🗑️
+              </button>
+            </div>
           </div>
-          <video data-video-key="${galleryVideoKey(v)}" controls preload="metadata" playsinline src="${escapeHtml(v.url)}"></video>
+          <video data-video-key="${videoKey}" controls preload="metadata" playsinline src="${escapeHtml(v.url)}"></video>
           <div class="gallery-meta">
-            <span class="badge badge-folder">📁 ${escapeHtml(v.category || 'Umum')}</span>
-            <span>💾 ${escapeHtml(v.sizeMB)} MB · ${escapeHtml(v.sourceLabel)}</span>
+            <span class="badge badge-folder gallery-folder-name" title="${escapeHtml(v.category || 'Umum')}">📁 ${escapeHtml(v.category || 'Umum')}</span>
+            <span class="gallery-source-meta">💾 ${escapeHtml(v.sizeMB)} MB · ${escapeHtml(v.sourceLabel)}</span>
           </div>
         </div>
       `;
     }).join('');
+    updateDeleteSelectedButton();
   }
 
   async function fetchGallery() {
@@ -2554,6 +3142,10 @@
       const navGalleryBadge = document.getElementById('navGalleryBadge');
       
       currentGalleryData = videos || [];
+      const availableKeys = new Set(currentGalleryData.map(galleryVideoKey));
+      for (const key of selectedGalleryKeys) {
+        if (!availableKeys.has(key)) selectedGalleryKeys.delete(key);
+      }
 
       if (navGalleryBadge) {
         navGalleryBadge.textContent = currentGalleryData.length;
@@ -2621,6 +3213,15 @@
 
   const galleryGrid = document.getElementById('galleryGrid');
   if (galleryGrid) {
+    galleryGrid.addEventListener('change', event => {
+      const checkbox = event.target.closest?.('.gallery-select-checkbox');
+      if (!checkbox) return;
+      const key = checkbox.dataset.galleryKey;
+      if (checkbox.checked) selectedGalleryKeys.add(key);
+      else selectedGalleryKeys.delete(key);
+      updateDeleteSelectedButton();
+    });
+
     galleryGrid.addEventListener('click', async (event) => {
       const button = event.target.closest('.delete-video-btn');
       if (!button) return;
@@ -2632,6 +3233,34 @@
       fetchGallery();
       fetchStatus();
       showToast('Video berhasil dihapus.', '✓');
+    });
+  }
+
+  const deleteSelectedGalleryBtn = document.getElementById('deleteSelectedGalleryBtn');
+  if (deleteSelectedGalleryBtn) {
+    deleteSelectedGalleryBtn.addEventListener('click', async () => {
+      const selectedVideos = currentGalleryData.filter(video => selectedGalleryKeys.has(galleryVideoKey(video)));
+      if (selectedVideos.length === 0) return showToast('Pilih minimal satu video.', '⚠️');
+      if (!await showConfirm(`${selectedVideos.length} video terpilih akan dihapus secara permanen.`, 'Hapus video terpilih?')) return;
+
+      const options = await deleteRequestOptions();
+      const results = await Promise.all(selectedVideos.map(async video => {
+        const targetPath = video.relativePath || video.filename;
+        const response = await fetch(`/api/gallery/${encodeURIComponent(video.source)}/${encodeURIComponent(targetPath)}`, options);
+        return { video, response, data: await response.json() };
+      }));
+      const failed = results.filter(result => !result.response.ok);
+      for (const result of results) {
+        if (result.response.ok) selectedGalleryKeys.delete(galleryVideoKey(result.video));
+      }
+      updateDeleteSelectedButton();
+      await fetchGallery();
+      fetchStatus();
+      if (failed.length > 0) {
+        showToast(`${results.length - failed.length} video dihapus, ${failed.length} gagal.`, '⚠️');
+      } else {
+        showToast(`${results.length} video terpilih berhasil dihapus.`, '✓');
+      }
     });
   }
 

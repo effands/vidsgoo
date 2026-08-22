@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { parsePromptBlocks, resolveSpintax, inspectVideoFile, resolveVideoTarget } = require('../lib/job-utils');
+const { parsePromptBlocks, resolveSpintax, inspectVideoFile, resolveVideoTarget, decideVideoAiRetry, decideStandardPromptCleanupRetry } = require('../lib/job-utils');
 
 test('spintax memilih kombinasi berbeda per indeks tanpa mengubah tag gambar', () => {
   const template = '@Gambar1 {tersenyum|berbicara} sambil {membawa|menunjukkan} @Gambar2';
@@ -16,6 +16,28 @@ test('spintax memilih kombinasi berbeda per indeks tanpa mengubah tag gambar', (
 
 test('spintax membiarkan kurung biasa dan grup tanpa pilihan tetap utuh', () => {
   assert.equal(resolveSpintax('UGC {santai} rasio (9:16)', 0), 'UGC {santai} rasio (9:16)');
+});
+
+test('Video AI retries at most four refreshes then asks the user to click manually', () => {
+  for (let count = 0; count < 4; count++) {
+    const decision = decideVideoAiRetry('VIDEO_AI_CLICK_FAILED: panel tidak terbuka', count);
+    assert.equal(decision.retryable, true);
+    assert.equal(decision.nextCount, count + 1);
+  }
+  const terminal = decideVideoAiRetry('VIDEO_AI_CLICK_FAILED: panel tidak terbuka', 4);
+  assert.equal(terminal.retryable, false);
+  assert.match(terminal.error, /klik tombol Video AI secara manual/i);
+});
+
+test('Buat Video retries prompt cleanup twice then continues to the next task', () => {
+  const error = 'STANDARD_PROMPT_CLEANUP_FAILED: Prompt lama Google Vids tidak berhasil dibersihkan.';
+  assert.deepEqual(decideStandardPromptCleanupRetry(error, 0), { retryable: true, nextCount: 1, error });
+  assert.deepEqual(decideStandardPromptCleanupRetry(error, 1), { retryable: true, nextCount: 2, error });
+  const terminal = decideStandardPromptCleanupRetry(error, 2);
+  assert.equal(terminal.retryable, false);
+  assert.match(terminal.error, /lanjut ke task berikutnya/i);
+  assert.equal(decideStandardPromptCleanupRetry('error affiliate', 0), null);
+  assert.equal(decideStandardPromptCleanupRetry('STANDARD_PROMPT_INPUT_FAILED: teks tidak masuk', 0).retryable, true);
 });
 
 test('satu prompt mempertahankan seluruh barisnya', () => {

@@ -29,6 +29,17 @@ test('public/index.html includes 3-Slot Affiliate UGC Studio, media inputs, and 
   assert.ok(html.includes('id="slotInput3"'), 'Harus memiliki input slot 3 (Detail)');
   assert.ok(html.includes('id="generateAffScriptBtn"'), 'Harus memiliki tombol generate script');
   assert.ok(html.includes('id="affPrompts"'), 'Harus memiliki textarea batch prompt affiliate');
+  assert.ok(html.includes('<label for="affVariationCount">Jumlah Video</label>'), 'Jumlah variasi harus menjelaskan total video');
+  assert.ok(html.includes('type="number" id="affVariationCount" value="1" min="1" max="20"'), 'Jumlah video harus mendukung input custom 1 sampai 20');
+  assert.ok(html.includes('input[type="number"], select, textarea'), 'Input jumlah video harus memakai style form yang sama');
+  assert.match(html, /class="affiliate-primary-fields"[\s\S]*?id="affProductName"[\s\S]*?id="affStyle"[\s\S]*?id="affVariationCount"/, 'Baris utama harus berisi produk, gaya, lalu jumlah video');
+  assert.match(html, /class="affiliate-secondary-fields"[\s\S]*?id="affProductUsp"[\s\S]*?id="affCta"/, 'Poin keunggulan harus sejajar dengan CTA');
+  assert.ok(html.includes('{review jujur|demo produk|cerita pengalaman}'), 'Panduan prompt harus memuat contoh spintax');
+  assert.ok(html.includes('class="card-header upload-card-header"'), 'Judul upload dan badge harus memakai header satu baris');
+  assert.ok(html.includes('<span>Upload Gambar</span>'), 'Judul upload harus ringkas tanpa teks maksimal 3');
+  assert.ok(!html.includes('Upload Gambar (Maksimal 3)'), 'Batas gambar cukup ditampilkan pada badge');
+  assert.match(html, /\.slot-dropzone\s*\{[\s\S]*?aspect-ratio:\s*16\s*\/\s*9;/, 'Area upload harus memakai rasio 16:9');
+  assert.match(html, /\.slot-preview-box\s*\{[\s\S]*?aspect-ratio:\s*16\s*\/\s*9;/, 'Preview upload harus mempertahankan rasio 16:9');
   assert.ok(html.includes('@Gambar1'), 'Harus memiliki referensi tag Gambar1');
   assert.ok(html.includes('@Gambar2'), 'Harus memiliki referensi tag Gambar2');
   assert.ok(html.includes('@Gambar3'), 'Harus memiliki referensi tag Gambar3');
@@ -82,14 +93,15 @@ test('server /api/queue/add supports affiliate mode with up to 3 image attachmen
     assert.equal(res.status, 200);
     const data = await res.json();
     assert.equal(data.success, true);
-    assert.equal(data.count, 2);
+    assert.equal(data.count, 5);
 
     const statusRes = await fetch(`http://127.0.0.1:${port}/api/status`);
     const statusData = await statusRes.json();
     
     const affiliateTasks = statusData.queue.filter(t => t.mode === 'affiliate');
-    assert.ok(affiliateTasks.length >= 2);
-    const task = affiliateTasks[affiliateTasks.length - 2];
+    assert.ok(affiliateTasks.length >= 5);
+    const batchTasks = affiliateTasks.slice(-5);
+    const task = batchTasks[0];
     assert.equal(task.mode, 'affiliate');
     assert.equal(task.ratio, '9:16');
     assert.equal(task.folder, 'Affiliate_Marshall_Cream');
@@ -102,9 +114,138 @@ test('server /api/queue/add supports affiliate mode with up to 3 image attachmen
     assert.equal(task.batchPrompts, payload.prompts);
     assert.equal(task.promptTemplate, '@Gambar1 {tersenyum|berbicara} saat mereview @Gambar2 dengan detail @Gambar3.');
     assert.equal(task.prompt, '@Gambar1 tersenyum saat mereview @Gambar2 dengan detail @Gambar3.');
-    assert.equal(affiliateTasks[affiliateTasks.length - 1].batchId, task.batchId);
-    assert.equal(affiliateTasks[affiliateTasks.length - 1].batchPrompts, payload.prompts);
-    assert.equal(affiliateTasks[affiliateTasks.length - 1].prompt, '@Gambar1 berbicara saat mereview @Gambar2 dengan detail @Gambar3.');
+    assert.ok(batchTasks.every(item => item.batchId === task.batchId));
+    assert.ok(batchTasks.every(item => item.batchPrompts === payload.prompts));
+    assert.deepEqual(batchTasks.map(item => item.prompt), [
+      '@Gambar1 tersenyum saat mereview @Gambar2 dengan detail @Gambar3.',
+      '@Gambar1 berbicara saat mereview @Gambar2 dengan detail @Gambar3.',
+      '@Gambar1 tersenyum saat mereview @Gambar2 dengan detail @Gambar3.',
+      '@Gambar1 berbicara saat mereview @Gambar2 dengan detail @Gambar3.',
+      '@Gambar1 tersenyum saat mereview @Gambar2 dengan detail @Gambar3.'
+    ]);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
+test('Jumlah Video membagi tiga prompt biasa dan mengembangkan satu prompt spintax', async () => {
+  const server = http.createServer(app);
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const port = server.address().port;
+  const endpoint = `http://127.0.0.1:${port}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'Origin': endpoint,
+    'X-Dashboard-Request': 'Google-Vids-Dashboard'
+  };
+
+  async function addAffiliateBatch(prompts) {
+    const response = await fetch(`${endpoint}/api/queue/add`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        mode: 'affiliate',
+        ratio: '9:16',
+        prompts,
+        affiliateConfig: { variationCount: '3' }
+      })
+    });
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.equal(result.count, 3);
+
+    const status = await fetch(`${endpoint}/api/status`).then(res => res.json());
+    return status.queue.slice(-3);
+  }
+
+  try {
+    const plainTasks = await addAffiliateBatch([
+      '@Gambar1 memperkenalkan @Gambar2.',
+      '@Gambar1 mendemonstrasikan @Gambar2.',
+      '@Gambar1 merekomendasikan @Gambar2.'
+    ].join('\n\n'));
+    assert.deepEqual(plainTasks.map(task => task.prompt), [
+      '@Gambar1 memperkenalkan @Gambar2.',
+      '@Gambar1 mendemonstrasikan @Gambar2.',
+      '@Gambar1 merekomendasikan @Gambar2.'
+    ]);
+
+    const spintaxTasks = await addAffiliateBatch(
+      '@Gambar1 {memperkenalkan|mendemonstrasikan|merekomendasikan} @Gambar2.'
+    );
+    assert.deepEqual(spintaxTasks.map(task => task.prompt), [
+      '@Gambar1 memperkenalkan @Gambar2.',
+      '@Gambar1 mendemonstrasikan @Gambar2.',
+      '@Gambar1 merekomendasikan @Gambar2.'
+    ]);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
+test('Affiliate tanpa Jumlah Video eksplisit membuat tepat satu task', async () => {
+  const server = http.createServer(app);
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const port = server.address().port;
+
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/api/queue/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Origin': `http://127.0.0.1:${port}`
+      },
+      body: JSON.stringify({
+        mode: 'affiliate',
+        prompts: '@Gambar1 mereview @Gambar2.',
+        affiliateConfig: {}
+      })
+    });
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).count, 1);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
+test('endpoint generator AI menolak API key kosong tanpa menghubungi provider', async () => {
+  const server = http.createServer(app);
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const port = server.address().port;
+
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/api/ai/generate-affiliate-prompts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Origin': `http://127.0.0.1:${port}`
+      },
+      body: JSON.stringify({ provider: 'gemini', model: 'gemini-3.5-flash-lite', apiKey: '' })
+    });
+    assert.equal(response.status, 400);
+    const result = await response.json();
+    assert.match(result.error, /API key Gemini wajib diisi/i);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
+test('endpoint test API key menolak key kosong sebelum menghubungi provider', async () => {
+  const server = http.createServer(app);
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const port = server.address().port;
+
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/api/ai/test-key`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Origin': `http://127.0.0.1:${port}`
+      },
+      body: JSON.stringify({ provider: 'gemini', model: 'gemini-3.5-flash-lite', apiKey: '' })
+    });
+    assert.equal(response.status, 400);
+    assert.match((await response.json()).error, /API key Gemini wajib diisi/i);
   } finally {
     await new Promise(resolve => server.close(resolve));
   }

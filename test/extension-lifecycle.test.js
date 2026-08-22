@@ -53,9 +53,9 @@ test('content script menghitung koordinat dan meminta trusted click tanpa fetch 
   const content = fs.readFileSync(path.join(root, 'extension', 'content.js'), 'utf8');
 
   assert.match(content, /function isVisible\(element\)\s*\{/);
-  assert.match(content, /element\.offsetParent !== null/);
   assert.match(content, /element\.getBoundingClientRect\(\)/);
-  assert.match(content, /rect\.width > 0 && rect\.height > 0/);
+  assert.match(content, /rect\.width <= 0 \|\| rect\.height <= 0/);
+  assert.match(content, /style\.display !== ['"]none['"]/);
   assert.match(content, /function getElementCenter\(element\)\s*\{[\s\S]*getBoundingClientRect\(\)[\s\S]*x:\s*rect\.left \+ rect\.width \/ 2[\s\S]*y:\s*rect\.top \+ rect\.height \/ 2/);
   assert.match(content, /type:\s*['"]TRUSTED_CLICK['"][\s\S]*taskId[\s\S]*stage[\s\S]*\.\.\.getElementCenter\(button\)/);
   assert.match(content, /if \(!response\?\.success\) throw new Error\(response\?\.error \|\| ['"]Trusted click gagal\.?['"]\)/);

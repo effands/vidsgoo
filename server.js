@@ -3,7 +3,8 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const crypto = require('crypto');
-const { parsePromptBlocks, resolveSpintax, inspectVideoFile, resolveVideoTarget } = require('./lib/job-utils');
+const { parsePromptBlocks, resolveSpintax, decideVideoAiRetry, decideStandardPromptCleanupRetry, inspectVideoFile, resolveVideoTarget } = require('./lib/job-utils');
+const { generateAffiliatePrompts, testAiConnection } = require('./lib/ai-prompt-provider');
 
 const app = express();
 const PORT = 7890;
@@ -48,6 +49,44 @@ app.get('/api/delete-token', requireDashboardOrigin, (req, res) => {
     return res.status(403).json({ error: 'Permintaan token tidak valid.' });
   }
   res.json({ token: deleteConfirmationToken });
+});
+
+app.post('/api/ai/generate-affiliate-prompts', requireDashboardOrigin, async (req, res) => {
+  const input = req.body && typeof req.body === 'object' ? req.body : {};
+  try {
+    const result = await generateAffiliatePrompts({
+      provider: String(input.provider || '').slice(0, 20),
+      apiKey: String(input.apiKey || '').slice(0, 500),
+      model: String(input.model || '').slice(0, 120),
+      productName: String(input.productName || '').slice(0, 300),
+      usp: String(input.usp || '').slice(0, 1000),
+      cta: String(input.cta || '').slice(0, 300),
+      style: String(input.style || '').slice(0, 100),
+      count: input.count,
+      hasDetail: input.hasDetail === true
+    });
+    res.json(result);
+  } catch (error) {
+    const message = String(error?.message || 'Generator prompt AI gagal.');
+    const isValidation = /wajib diisi|tidak valid|tidak didukung|harus versi/i.test(message);
+    res.status(isValidation ? 400 : 502).json({ error: message });
+  }
+});
+
+app.post('/api/ai/test-key', requireDashboardOrigin, async (req, res) => {
+  const input = req.body && typeof req.body === 'object' ? req.body : {};
+  try {
+    const result = await testAiConnection({
+      provider: String(input.provider || '').slice(0, 20),
+      apiKey: String(input.apiKey || '').slice(0, 500),
+      model: String(input.model || '').slice(0, 120)
+    });
+    res.json(result);
+  } catch (error) {
+    const message = String(error?.message || 'Test API key gagal.');
+    const isValidation = /wajib diisi|tidak valid|tidak didukung|harus versi/i.test(message);
+    res.status(isValidation ? 400 : 502).json({ error: message });
+  }
 });
 
 function scanVideosRecursively(baseDir, relativePrefix = '') {
@@ -423,8 +462,15 @@ app.post('/api/extension/fail-task', (req, res) => {
   if (!isProcessing || activeTaskId !== task.id || !/^(Processing|Submitting|Rendering|Downloading)/.test(task.status)) {
     return res.status(409).json({ error: 'Task bukan assignment aktif.' });
   }
-  const retryable = /Receiving end does not exist|Could not establish connection|RETRY_AFTER_HARD_RELOAD/i.test(error || '') ||
+  const videoAiDecision = decideVideoAiRetry(error, task.videoAiRefreshCount || 0);
+  if (videoAiDecision) task.videoAiRefreshCount = videoAiDecision.nextCount;
+  const promptCleanupDecision = decideStandardPromptCleanupRetry(error, task.standardPromptCleanupRefreshCount || 0);
+  if (promptCleanupDecision) task.standardPromptCleanupRefreshCount = promptCleanupDecision.nextCount;
+  const retryDecision = videoAiDecision || promptCleanupDecision;
+  const retryable = retryDecision ? retryDecision.retryable :
+    /Receiving end does not exist|Could not establish connection|RETRY_AFTER_HARD_RELOAD/i.test(error || '') ||
     /^(tombol Video AI|kotak prompt Google Vids|tombol Buat).*tidak ditemukan setelah/i.test(error || '');
+  const finalError = retryDecision?.error || error;
   task.status = retryable ? 'Pending (Retry Agent)' : 'Failed';
   if (retryable) task.assignedAgent = null;
   isProcessing = false;
@@ -433,8 +479,12 @@ app.post('/api/extension/fail-task', (req, res) => {
     activeExtensions.get(extId).cooldownUntil = Date.now();
   }
   addLog(retryable
-    ? `↪️ RETRY LANGSUNG | Task ${taskId || '-'} | Agent ${extId || 'extension'} | ${error}`
-    : `❌ FAILED | Task ${taskId || '-'} | Agent ${extId || 'extension'} | ${error || 'Kesalahan tidak diketahui.'}`);
+    ? videoAiDecision
+      ? `↪️ RETRY LANGSUNG | Task ${taskId || '-'} | Agent ${extId || 'extension'} | Refresh Video AI ${task.videoAiRefreshCount}/4 | ${finalError}`
+      : promptCleanupDecision
+        ? `↪️ RETRY LANGSUNG | Task ${taskId || '-'} | Agent ${extId || 'extension'} | Refresh prompt Buat Video ${task.standardPromptCleanupRefreshCount}/2 | ${finalError}`
+      : `↪️ RETRY LANGSUNG | Task ${taskId || '-'} | Agent ${extId || 'extension'} | ${finalError}`
+    : `❌ FAILED | Task ${taskId || '-'} | Agent ${extId || 'extension'} | ${finalError || 'Kesalahan tidak diketahui.'}`);
   setTimeout(processNextQueue, 500);
   res.json({ success: true, retryable });
 });
@@ -536,13 +586,17 @@ app.post('/api/queue/add', requireDashboardOrigin, (req, res) => {
     productUsp: String(affiliateConfig.productUsp || '').slice(0, 1000),
     cta: String(affiliateConfig.cta || '').slice(0, 300),
     style: String(affiliateConfig.style || 'hook_ugc_2s').slice(0, 100),
-    variationCount: String(affiliateConfig.variationCount || '3').slice(0, 10)
+    variationCount: String(affiliateConfig.variationCount || '1').slice(0, 10)
   } : null;
   const batchTimestamp = Date.now();
   const batchId = `batch_${batchTimestamp}_${crypto.randomBytes(4).toString('hex')}`;
   const batchPrompts = promptList.join('\n\n');
-  
-  promptList.forEach((pText, index) => {
+  const requestedVariationCount = Number.parseInt(safeAffiliateConfig?.variationCount || '', 10);
+  const taskCount = mode === 'affiliate' && Number.isInteger(requestedVariationCount)
+    ? Math.min(20, Math.max(1, requestedVariationCount))
+    : promptList.length;
+
+  Array.from({ length: taskCount }, (_, index) => promptList[index % promptList.length]).forEach((pText, index) => {
     taskQueue.push({
       id: `task_${batchTimestamp}_${index}`,
       batchId,
@@ -556,6 +610,8 @@ app.post('/api/queue/add', requireDashboardOrigin, (req, res) => {
       images: safeImages,
       affiliateConfig: safeAffiliateConfig,
       mode: mode || 'standard',
+      videoAiRefreshCount: 0,
+      standardPromptCleanupRefreshCount: 0,
       status: 'Pending',
       createdAt: new Date().toLocaleTimeString(),
       createdTimestamp: batchTimestamp
@@ -565,11 +621,11 @@ app.post('/api/queue/add', requireDashboardOrigin, (req, res) => {
   const folderLog = sanitizedFolder ? ` | Folder "${sanitizedFolder}"` : '';
   const modeLog = mode === 'affiliate' ? ' | 🛍️ Mode Affiliate' : '';
   const imageLog = safeImages.length > 0 ? ` | ${safeImages.length} Media` : '';
-  addLog(`📥 Batch diterima | ${promptList.length} task | Rasio ${ratio || '16:9'} | Target ${targetChrome || 'auto'}${folderLog}${modeLog}${imageLog}`);
+  addLog(`📥 Batch diterima | ${taskCount} task | Rasio ${ratio || '16:9'} | Target ${targetChrome || 'auto'}${folderLog}${modeLog}${imageLog}`);
   
   processNextQueue();
 
-  res.json({ success: true, count: promptList.length, totalQueue: taskQueue.length });
+  res.json({ success: true, count: taskCount, totalQueue: taskQueue.length });
 });
 
 // Queue Processor Function (Extension-owned execution and download lifecycle)
