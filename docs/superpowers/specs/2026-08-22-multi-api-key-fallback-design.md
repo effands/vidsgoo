@@ -14,9 +14,15 @@ Memungkinkan pengguna menyimpan beberapa API key untuk setiap provider prompt AI
 
 ## Antarmuka
 
-Menu API Key mempertahankan pilihan provider dan model. Bagian API key berubah menjadi daftar credential untuk provider aktif. Setiap baris menampilkan nama urutan, input key tersamarkan, status, serta aksi Tampilkan, Test, dan Hapus. Tombol Tambah API Key membuat baris baru.
+Menu API Key tidak lagi memakai panel `details`. Header ringkas menampilkan judul API Key Generator dan badge Tersimpan Lokal. Empat provider ditampilkan sebagai tab atau card pilihan yang tetap terbaca pada tema terang dan gelap. Model provider aktif ditempatkan sejajar dengan nama provider.
 
-Status key terdiri dari belum dites, valid, gagal, dan sedang digunakan. Daftar key menentukan urutan percobaan. Key yang berhasil digunakan ditandai sebagai aktif tanpa mengubah urutan tersimpan.
+Bagian API key berubah menjadi daftar credential untuk provider aktif. Setiap baris berbentuk card ringkas yang menampilkan nama urutan, input key tersamarkan, status, serta aksi Tampilkan, Test, dan Hapus. Tombol Tambah API Key ditempatkan setelah daftar dan menjadi aksi utama sekunder.
+
+Panel Urutan Fallback menampilkan provider awal dan arah perpindahan provider secara visual. Panel ini hanya merangkum urutan efektif; pengguna tidak perlu mengatur ulang provider pada versi pertama.
+
+Status key terdiri dari belum dites berwarna netral, valid berwarna hijau, gagal berwarna merah, dan sedang digunakan berwarna biru. Daftar key menentukan urutan percobaan. Key yang berhasil digunakan ditandai sebagai aktif tanpa mengubah urutan tersimpan.
+
+Pada layar kecil, tab provider dapat digulir horizontal, model turun ke baris berikutnya, dan aksi credential membungkus tanpa menyebabkan overflow. Card, input, status, dan teks harus mempertahankan kontras pada kedua tema.
 
 ## Penyimpanan Lokal
 
